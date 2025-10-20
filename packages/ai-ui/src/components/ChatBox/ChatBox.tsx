@@ -1,7 +1,9 @@
 // src/components/ChatBox/ChatBox.tsx
 import React, { useMemo, useRef, useState } from "react";
+
 import type { AIMessage } from "../../lib/ai/types";
 import { useAI } from "../../lib/ai/useAI";
+
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 
@@ -51,6 +53,7 @@ export const ChatBox: React.FC = () => {
             </div>
           </div>
         ))}
+
         <div ref={endRef} />
       </div>
 

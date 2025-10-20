@@ -1,46 +1,22 @@
 import React, { useState } from "react";
+
 import { useAI } from "../../lib/ai/useAI";
+import { LANGS } from "../../lib/i18n/langs";
+import type { LangCode } from "../../lib/i18n/langs";
+
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 
-/** Ті самі мови, що й у Summarizer */
-type LangCode =
-  | "uk"
-  | "en"
-  | "pl"
-  | "de"
-  | "es"
-  | "fr"
-  | "it"
-  | "pt"
-  | "ru"
-  | "tr";
-
-const LANGS: Record<LangCode, string> = {
-  uk: "Ukrainian",
-  en: "English",
-  pl: "Polish",
-  de: "German",
-  es: "Spanish",
-  fr: "French",
-  it: "Italian",
-  pt: "Portuguese",
-  ru: "Russian",
-  tr: "Turkish",
-};
-
-/** Промпт для перекладу з максимально акуратними правилами */
+/** Формує перекладацький промпт */
 function buildPrompt(text: string, from: string, to: string) {
   return [
     `You are a precise translator from ${from} to ${to}.`,
     "Rules:",
     "- Respond strictly in the target language.",
-    "- Preserve meaning, tone and named entities.",
-    "- Keep numbers, units, emojis and punctuation.",
-    "- Preserve Markdown structure (headers, lists, tables).",
-    "- Do NOT translate code blocks or inline code.",
-    "- Do NOT translate URLs, domain names or file paths.",
-    "- Keep line breaks; do not merge paragraphs unnecessarily.",
+    "- Preserve meaning, tone, and named entities.",
+    "- Keep emojis, punctuation, and Markdown structure.",
+    "- Do NOT translate code, URLs, or domain names.",
+    "- Keep line breaks and formatting.",
     "",
     "Text:",
     text,
@@ -116,7 +92,7 @@ export const Translator: React.FC = () => {
             ))}
           </select>
 
-          {/* Provider badge */}
+          {/* Provider */}
           {provider && (
             <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700">
               via {provider === "openai" ? "OpenAI" : "Groq"}
@@ -126,18 +102,14 @@ export const Translator: React.FC = () => {
       </div>
 
       <textarea
-        className="h-40 w-full resize-y rounded-xl border p-3 text-sm"
+        className="h-40 w-full resize-none rounded-xl border p-3 text-sm"
         placeholder="Type or paste text…"
         value={src}
         onChange={(e) => setSrc(e.target.value)}
       />
 
       <div className="flex items-center gap-2">
-        <Button
-          className="ml-0"
-          disabled={loading || !canTranslate}
-          onClick={run}
-        >
+        <Button disabled={!canTranslate || loading} onClick={run}>
           {loading ? "…" : "Translate"}
         </Button>
         {error && <p className="text-xs text-red-600">{error}</p>}

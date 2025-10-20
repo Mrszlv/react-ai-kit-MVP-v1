@@ -1,84 +1,37 @@
 import React, { useState } from "react";
+
 import { useAI } from "../../lib/ai/useAI";
+import { LANGS } from "../../lib/i18n/langs";
+import type { LangCode } from "../../lib/i18n/langs";
+
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 
-type LangCode =
-  | "uk"
-  | "en"
-  | "pl"
-  | "de"
-  | "es"
-  | "fr"
-  | "it"
-  | "pt"
-  | "ru"
-  | "tr";
-const LANGS: Record<LangCode, string> = {
-  uk: "Ukrainian",
-  en: "English",
-  pl: "Polish",
-  de: "German",
-  es: "Spanish",
-  fr: "French",
-  it: "Italian",
-  pt: "Portuguese",
-  ru: "Russian",
-  tr: "Turkish",
-};
-
-function buildPrompt(
-  text: string,
-  lang: string,
-  style: "short" | "bullets" | "detailed"
-) {
-  const styleLine =
-    style === "bullets"
-      ? "Return 3–7 concise bullet points."
-      : style === "detailed"
-      ? "Write 3–5 compact paragraphs."
-      : "Keep it to 3–5 sentences.";
-
+function buildPrompt(text: string, language: string, format: string) {
   return [
-    "You are a professional summarizer.",
-    "Requirements:",
-    "- Respond strictly in the requested language.",
-    "- Preserve key terms, numbers, units; keep URLs/code blocks intact.",
-    "- If input has Markdown, preserve structure.",
-    styleLine,
-    `Language: ${lang}.`,
+    `You are a professional text summarizer that produces ${format.toLowerCase()} summaries in ${language}.`,
+    "Rules:",
+    "- Preserve meaning and tone.",
+    "- Avoid changing facts.",
+    "- Keep formatting consistent (Markdown allowed).",
+    "- Use bullet points if requested.",
+    "- Output only the summary text.",
     "",
-    "Text to summarize:",
+    "Text:",
     text,
   ].join("\n");
 }
 
-export const Summarizer: React.FC<{
-  defaultLang?: LangCode;
-  defaultStyle?: "short" | "bullets" | "detailed";
-  title?: string;
-  placeholder?: string;
-  buttonLabel?: string;
-}> = ({
-  defaultLang = "uk",
-  defaultStyle = "short",
-  title = "Summarizer",
-  placeholder = "Paste text here…",
-  buttonLabel = "Summarize",
-}) => {
+export const Summarizer: React.FC = () => {
   const { streamGenerate, loading, error, provider } = useAI();
-  const [lang, setLang] = useState<LangCode>(defaultLang);
-  const [style, setStyle] = useState<"short" | "bullets" | "detailed">(
-    defaultStyle
-  );
-  const [input, setInput] = useState("");
+  const [src, setSrc] = useState("");
   const [out, setOut] = useState("");
+  const [lang, setLang] = useState<LangCode>("en");
+  const [style, setStyle] = useState("Bulleted");
 
-  async function onSummarize() {
+  async function run() {
     setOut("");
-    const prompt = buildPrompt(input, LANGS[lang], style);
-
-    // ✅ Стрімінг: поступове оновлення виводу
+    const prompt = buildPrompt(src, LANGS[lang], style);
     await streamGenerate(prompt, {
       onToken: (t) => setOut((prev) => prev + t),
       onDone: (final) => setOut(final),
@@ -88,32 +41,31 @@ export const Summarizer: React.FC<{
   return (
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-lg font-semibold">📝 {title}</h3>
+        <h3 className="text-lg font-semibold">📝 Summarizer</h3>
+
         <div className="ml-auto flex items-center gap-2">
           <select
-            title="Summaizer"
+            title="summaizer"
             className="rounded-xl border px-3 py-2 text-sm"
             value={lang}
             onChange={(e) => setLang(e.target.value as LangCode)}
           >
-            {Object.entries(LANGS).map(([code, label]) => (
+            {Object.entries(LANGS).map(([code, name]) => (
               <option key={code} value={code}>
-                {label}
+                {name}
               </option>
             ))}
           </select>
 
           <select
+            title="Summary style"
             className="rounded-xl border px-3 py-2 text-sm"
             value={style}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setStyle(e.target.value as "short" | "bullets" | "detailed")
-            }
-            title="Summary style"
+            onChange={(e) => setStyle(e.target.value)}
           >
-            <option value="short">Short</option>
-            <option value="bullets">Bulleted</option>
-            <option value="detailed">Detailed</option>
+            <option value="Bulleted">Bulleted</option>
+            <option value="Paragraph">Paragraph</option>
+            <option value="Compact">Compact</option>
           </select>
 
           {provider && (
@@ -125,17 +77,17 @@ export const Summarizer: React.FC<{
       </div>
 
       <textarea
-        className="h-44 w-full resize-y rounded-xl border p-3 text-sm"
-        placeholder={placeholder}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
+        className="h-40 w-full resize-none rounded-xl border p-3 text-sm"
+        placeholder="Paste text here…"
+        value={src}
+        onChange={(e) => setSrc(e.target.value)}
       />
 
       <div className="flex items-center gap-2">
-        <Button disabled={loading || !input.trim()} onClick={onSummarize}>
-          {loading ? "…" : buttonLabel}
+        <Button disabled={loading || !src.trim()} onClick={run}>
+          {loading ? "…" : "Summarize"}
         </Button>
-        {error && <span className="text-xs text-red-600">{error}</span>}
+        {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
 
       <div className="min-h-16 w-full whitespace-pre-wrap rounded-xl border bg-white/60 p-3 text-sm">
