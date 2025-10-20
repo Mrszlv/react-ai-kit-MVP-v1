@@ -1,0 +1,9 @@
+/* Варіант для v4 */
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+}
+body {
+  @apply bg-slate-50 text-slate-900;
+}
