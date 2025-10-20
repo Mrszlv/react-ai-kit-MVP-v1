@@ -14,7 +14,6 @@ type LangCode =
   | "pt"
   | "ru"
   | "tr";
-
 const LANGS: Record<LangCode, string> = {
   uk: "Ukrainian",
   en: "English",
@@ -44,9 +43,8 @@ function buildPrompt(
     "You are a professional summarizer.",
     "Requirements:",
     "- Respond strictly in the requested language.",
-    "- Preserve important terminology and named entities.",
-    "- Keep numbers/units intact.",
-    "- If there is Markdown, preserve structure (headers, lists); do not translate code blocks or URLs.",
+    "- Preserve key terms, numbers, units; keep URLs/code blocks intact.",
+    "- If input has Markdown, preserve structure.",
     styleLine,
     `Language: ${lang}.`,
     "",
@@ -68,7 +66,7 @@ export const Summarizer: React.FC<{
   placeholder = "Paste text here…",
   buttonLabel = "Summarize",
 }) => {
-  const { generate, loading, error, provider } = useAI();
+  const { streamGenerate, loading, error, provider } = useAI();
   const [lang, setLang] = useState<LangCode>(defaultLang);
   const [style, setStyle] = useState<"short" | "bullets" | "detailed">(
     defaultStyle
@@ -79,17 +77,21 @@ export const Summarizer: React.FC<{
   async function onSummarize() {
     setOut("");
     const prompt = buildPrompt(input, LANGS[lang], style);
-    const summary = await generate(prompt);
-    setOut(summary);
+
+    // ✅ Стрімінг: поступове оновлення виводу
+    await streamGenerate(prompt, {
+      onToken: (t) => setOut((prev) => prev + t),
+      onDone: (final) => setOut(final),
+    });
   }
 
   return (
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-lg font-semibold">{title}</h3>
+        <h3 className="text-lg font-semibold">📝 {title}</h3>
         <div className="ml-auto flex items-center gap-2">
           <select
-            title="select"
+            title="Summaizer"
             className="rounded-xl border px-3 py-2 text-sm"
             value={lang}
             onChange={(e) => setLang(e.target.value as LangCode)}

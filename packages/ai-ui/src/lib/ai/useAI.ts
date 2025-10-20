@@ -6,66 +6,73 @@ export function useAI(model?: string) {
   const { client, defaultModel } = useAIContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [provider, setProvider] = useState<"openai" | "groq" | null>(null);
 
-  async function chat(messages: AIMessage[]): Promise<string> {
+  async function chat(messages: AIMessage[]) {
     setLoading(true);
     setError(null);
-    setProvider(client.name);
     try {
       return await client.chat({ model: model ?? defaultModel, messages });
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
-      setError(m);
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError(String(e));
+      }
       return "";
     } finally {
-      setProvider(client.name);
       setLoading(false);
     }
   }
 
-  async function generate(prompt: string): Promise<string> {
+  async function generate(prompt: string) {
     setLoading(true);
     setError(null);
-    setProvider(client.name);
     try {
       return await client.generate({ model: model ?? defaultModel, prompt });
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
-      setError(m);
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError(String(e));
+      }
       return "";
     } finally {
-      setProvider(client.name);
       setLoading(false);
     }
   }
 
-  // нове: стрімінг
-  async function generateStream(
+  // ✅ нове: стрімінг токенів
+  async function streamGenerate(
     prompt: string,
-    onToken: (t: string) => void,
-    onDone?: (full: string) => void
-  ): Promise<string> {
+    handlers?: {
+      onToken?: (t: string) => void;
+      onDone?: (final: string) => void;
+    }
+  ) {
     setLoading(true);
     setError(null);
-    setProvider(client.name);
     try {
-      const full = await client.streamGenerate({
+      const final = await client.streamGenerate({
         model: model ?? defaultModel,
         prompt,
-        onToken,
-        onDone,
+        onToken: (t) => handlers?.onToken?.(t),
+        onDone: (finalTxt) => handlers?.onDone?.(finalTxt),
       });
-      return full;
+      return final;
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
-      setError(m);
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError(String(e));
+      }
       return "";
     } finally {
-      setProvider(client.name);
       setLoading(false);
     }
   }
 
-  return { chat, generate, generateStream, loading, error, provider };
+  // provider для бейджика (openai|groq)
+  const provider = client.name;
+
+  return { chat, generate, streamGenerate, loading, error, provider };
 }

@@ -6,7 +6,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 
 export const ChatBox: React.FC = () => {
-  const { chat, loading, error } = useAI();
+  const { chat, loading, error, provider } = useAI();
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
@@ -30,10 +30,11 @@ export const ChatBox: React.FC = () => {
   return (
     <Card className="space-y-4">
       <div className="w-full min-h-40 max-h-[28rem] overflow-auto rounded-xl bg-white/60 p-3 text-sm">
-        <h3 className="text-lg font-semibold">ChatBox</h3>
+        <h3 className="text-lg font-semibold"> 💬 ChatBox</h3>
         {messages.length === 0 && (
           <div className="text-slate-500">Start the conversation</div>
         )}
+
         {messages.map((m, i) => (
           <div
             key={i}
@@ -70,6 +71,12 @@ export const ChatBox: React.FC = () => {
           {loading ? "…" : "Send"}
         </Button>
       </div>
+
+      {provider && (
+        <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700">
+          via {provider === "openai" ? "OpenAI" : "Groq"}
+        </span>
+      )}
 
       {error && <p className="text-xs text-red-600">{error}</p>}
     </Card>
