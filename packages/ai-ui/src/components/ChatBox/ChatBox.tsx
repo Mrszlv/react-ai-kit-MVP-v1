@@ -30,8 +30,9 @@ export const ChatBox: React.FC = () => {
   return (
     <Card className="space-y-4">
       <div className="w-full min-h-40 max-h-[28rem] overflow-auto rounded-xl bg-white/60 p-3 text-sm">
+        <h3 className="text-lg font-semibold">ChatBox</h3>
         {messages.length === 0 && (
-          <div className="text-slate-500">Start the conversation ✨</div>
+          <div className="text-slate-500">Start the conversation</div>
         )}
         {messages.map((m, i) => (
           <div
@@ -65,7 +66,7 @@ export const ChatBox: React.FC = () => {
           }}
           placeholder="Type a message..."
         />
-        <Button disabled={loading} onClick={send}>
+        <Button disabled={loading || input.length === 0} onClick={send}>
           {loading ? "…" : "Send"}
         </Button>
       </div>

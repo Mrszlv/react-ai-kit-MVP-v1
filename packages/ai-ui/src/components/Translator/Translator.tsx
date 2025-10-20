@@ -32,6 +32,7 @@ export const Translator: React.FC = () => {
   return (
     <Card className="space-y-4">
       <div className="flex items-center gap-2">
+        <h3 className="text-lg font-semibold">Translator</h3>
         <select
           title="select"
           className="rounded-xl border px-3 py-2 text-sm"
