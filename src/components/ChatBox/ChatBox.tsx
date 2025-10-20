@@ -11,11 +11,10 @@ export const ChatBox: React.FC = () => {
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
-  const base: AIMessage = {
-    role: "system",
-    content: "You are a helpful assistant.",
-  };
-  const visible = useMemo<AIMessage[]>(() => [base, ...messages], [messages]);
+  const base = useMemo<AIMessage>(
+    () => ({ role: "system", content: "You are a helpful assistant." }),
+    []
+  );
 
   async function send() {
     if (!input.trim()) return;
@@ -23,6 +22,7 @@ export const ChatBox: React.FC = () => {
     setInput("");
     // важливо: передати актуальний масив (із новим повідомленням)
     const reply = await chat([base, ...next]);
+
     setMessages([...next, { role: "assistant", content: reply }]);
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }
