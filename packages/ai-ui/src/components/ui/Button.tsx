@@ -1,13 +1,31 @@
 import React from "react";
+import clsx from "clsx";
 
-export const Button = ({
-  className = "",
+type Props = React.PropsWithChildren<{
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  type?: "button" | "submit";
+}>;
+
+export const Button: React.FC<Props> = ({
+  className,
+  disabled,
+  onClick,
+  type = "button",
   children,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+}) => (
   <button
-    {...props}
-    className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:opacity-90 active:opacity-80 disabled:opacity-50 ${className}`}
+    type={type}
+    onClick={onClick}
+    disabled={disabled}
+    className={clsx(
+      "rounded-xl px-4 py-2 text-sm font-medium transition-colors",
+      "bg-indigo-500 text-white hover:bg-indigo-600",
+      "dark:bg-indigo-400 dark:hover:bg-indigo-500",
+      "disabled:opacity-50 disabled:cursor-not-allowed",
+      className
+    )}
   >
     {children}
   </button>

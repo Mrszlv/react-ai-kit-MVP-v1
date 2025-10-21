@@ -1,6 +1,7 @@
 export * from "./components/ChatBox/ChatBox";
 export * from "./components/Summarizer/Summarizer";
 export * from "./components/Translator/Translator";
+export * from "./components/Rewriter/Rewriter";
 export * from "./components/ui/Button";
 export * from "./components/ui/Card";
 
