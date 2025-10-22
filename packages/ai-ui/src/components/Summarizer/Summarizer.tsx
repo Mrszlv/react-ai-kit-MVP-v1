@@ -9,7 +9,6 @@ import { Card } from "../ui/Card";
 
 import clsx from "clsx";
 
-// безпечне отримання назви мови (LANGS може бути string або {label})
 function langLabel(code: LangCode): string {
   const v = (
     LANGS as unknown as Record<

@@ -31,14 +31,12 @@ export const ChatBox: React.FC = () => {
 
   return (
     <Card className="space-y-4">
-      {/* Заголовок */}
       <div className="flex items-center gap-2">
         <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
           💬 ChatBox
         </h3>
       </div>
 
-      {/* Стрічка чату */}
       <div
         className="
           w-full min-h-40 max-h-112 overflow-auto rounded-xl border
@@ -76,7 +74,6 @@ export const ChatBox: React.FC = () => {
         <div ref={endRef} />
       </div>
 
-      {/* Ввід + кнопка */}
       <div className="flex w-full gap-2">
         <input
           aria-label="Type a message"

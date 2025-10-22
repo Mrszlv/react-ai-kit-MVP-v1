@@ -6,6 +6,7 @@ import type { LangCode } from "../../lib/i18n/langs";
 
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+
 import clsx from "clsx";
 
 type Tone =
@@ -18,7 +19,6 @@ type Tone =
 type Length = "shorter" | "same" | "longer";
 type Creativity = "low" | "medium" | "high";
 
-// Підказки для моделі
 function buildPrompt(
   text: string,
   opts: {

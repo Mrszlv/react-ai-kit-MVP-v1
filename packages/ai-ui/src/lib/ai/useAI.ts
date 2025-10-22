@@ -9,7 +9,6 @@ export function useAI(model?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Щоб показувати "via OpenAI/Groq"
   const provider: "openai" | "groq" | null =
     (client && (client as any).name) || null;
 
@@ -47,11 +46,6 @@ export function useAI(model?: string) {
     }
   }
 
-  /**
-   * Стрімова версія — ВАЖЛИВО: передаємо ДВА аргументи:
-   *   1) opts
-   *   2) handlers з типами параметрів
-   */
   async function streamGenerate(
     prompt: string,
     handlers: {

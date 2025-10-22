@@ -6,9 +6,9 @@ import type { LangCode } from "../../lib/i18n/langs";
 
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+
 import clsx from "clsx";
 
-/** Формує перекладацький промпт */
 function buildPrompt(text: string, from: string, to: string) {
   return [
     `You are a precise translator from ${from} to ${to}.`,
@@ -57,7 +57,6 @@ export const Translator: React.FC = () => {
         </h3>
 
         <div className="ml-1 flex justify-between items-center gap-2">
-          {/* FROM */}
           <select
             title="From language"
             className={clsx(
@@ -75,7 +74,6 @@ export const Translator: React.FC = () => {
             ))}
           </select>
 
-          {/* SWAP */}
           <button
             type="button"
             className={clsx(
@@ -89,7 +87,6 @@ export const Translator: React.FC = () => {
             ⇄
           </button>
 
-          {/* TO */}
           <select
             title="To language"
             className={clsx(
@@ -136,7 +133,7 @@ export const Translator: React.FC = () => {
       >
         {out || "Output will appear here"}
       </div>
-      {/* Provider */}
+
       {provider && (
         <span
           className={clsx(

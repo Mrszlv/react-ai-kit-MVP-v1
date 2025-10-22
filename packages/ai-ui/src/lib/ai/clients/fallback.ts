@@ -1,9 +1,5 @@
 import type { AIClient, StreamHandlers } from "../types";
 
-/**
- * FallbackClient — проксі, який пробує primary, інакше secondary.
- * name відповідає активному провайдеру ("openai" | "groq"), щоб пройти типи.
- */
 export class FallbackClient implements AIClient {
   readonly name: "openai" | "groq";
   private primary?: AIClient;

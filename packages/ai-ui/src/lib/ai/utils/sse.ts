@@ -22,7 +22,7 @@ export async function readOpenAISSE(
 
       try {
         const json = JSON.parse(payload);
-        // OpenAI/Groq-сумісне поле
+
         const delta =
           json.choices?.[0]?.delta?.content ??
           json.choices?.[0]?.message?.content ??
