@@ -20,7 +20,7 @@ export const Button: React.FC<Props> = ({
     onClick={onClick}
     disabled={disabled}
     className={clsx(
-      "rounded-xl px-4 py-2 text-sm font-medium transition-colors",
+      "rounded-xl px-4 py-2 text-sm font-medium transition-colors cursor-pointer",
       "bg-indigo-500 text-white hover:bg-indigo-600",
       "dark:bg-indigo-400 dark:hover:bg-indigo-500",
       "disabled:opacity-50 disabled:cursor-not-allowed",

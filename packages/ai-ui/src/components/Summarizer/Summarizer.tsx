@@ -7,6 +7,19 @@ import type { LangCode } from "../../lib/i18n/langs";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 
+import clsx from "clsx";
+
+// безпечне отримання назви мови (LANGS може бути string або {label})
+function langLabel(code: LangCode): string {
+  const v = (
+    LANGS as unknown as Record<
+      LangCode,
+      string | { label?: string } | undefined
+    >
+  )[code];
+  return typeof v === "string" ? v : v?.label ?? String(code);
+}
+
 function buildPrompt(text: string, language: string, format: string) {
   return [
     `You are a professional text summarizer that produces ${format.toLowerCase()} summaries in ${language}.`,
@@ -30,8 +43,12 @@ export const Summarizer: React.FC = () => {
   const [style, setStyle] = useState("Bulleted");
 
   async function run() {
+    const text = src.trim();
+    if (!text) return;
     setOut("");
-    const prompt = buildPrompt(src, LANGS[lang], style);
+
+    const prompt = buildPrompt(text, langLabel(lang), style);
+
     await streamGenerate(prompt, {
       onToken: (t) => setOut((prev) => prev + t),
       onDone: (final) => setOut(final),
@@ -41,25 +58,35 @@ export const Summarizer: React.FC = () => {
   return (
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-lg font-semibold">📝 Summarizer</h3>
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+          📝 Summarizer
+        </h3>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-1 flex flex-wrap items-center gap-2">
           <select
-            title="summaizer"
-            className="rounded-xl border px-3 py-2 text-sm"
+            title="Language"
+            className={clsx(
+              "rounded-xl border px-2 py-1 text-sm cursor-pointer",
+              "bg-white/90 border-slate-200 text-slate-900",
+              "dark:bg-slate-900/70 dark:border-slate-700 dark:text-slate-100"
+            )}
             value={lang}
             onChange={(e) => setLang(e.target.value as LangCode)}
           >
-            {Object.entries(LANGS).map(([code, name]) => (
+            {Object.keys(LANGS).map((code) => (
               <option key={code} value={code}>
-                {name}
+                {langLabel(code as LangCode)}
               </option>
             ))}
           </select>
 
           <select
             title="Summary style"
-            className="rounded-xl border px-3 py-2 text-sm"
+            className={clsx(
+              "rounded-xl border px-2 py-1 text-sm cursor-pointer",
+              "bg-white/90 border-slate-200 text-slate-900",
+              "dark:bg-slate-900/70 dark:border-slate-700 dark:text-slate-100"
+            )}
             value={style}
             onChange={(e) => setStyle(e.target.value)}
           >
@@ -67,17 +94,15 @@ export const Summarizer: React.FC = () => {
             <option value="Paragraph">Paragraph</option>
             <option value="Compact">Compact</option>
           </select>
-
-          {provider && (
-            <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700">
-              via {provider === "openai" ? "OpenAI" : "Groq"}
-            </span>
-          )}
         </div>
       </div>
 
       <textarea
-        className="h-40 w-full resize-none rounded-xl border p-3 text-sm"
+        className={clsx(
+          "h-40 w-full resize-none rounded-xl border p-3 text-sm outline-none",
+          "bg-white/90 border-slate-200 text-slate-900 placeholder:text-slate-400",
+          "dark:bg-slate-900/70 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-400"
+        )}
         placeholder="Paste text here…"
         value={src}
         onChange={(e) => setSrc(e.target.value)}
@@ -90,9 +115,27 @@ export const Summarizer: React.FC = () => {
         {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
 
-      <div className="min-h-16 w-full whitespace-pre-wrap rounded-xl border bg-white/60 p-3 text-sm">
+      <div
+        className={clsx(
+          "min-h-16 w-full whitespace-pre-wrap rounded-xl border p-3 text-sm",
+          "bg-white/70 border-slate-200 text-slate-900",
+          "dark:bg-slate-900/60 dark:border-slate-700 dark:text-slate-100"
+        )}
+      >
         {out || "Output will appear here"}
       </div>
+
+      {provider && (
+        <span
+          className={clsx(
+            "border-slate-200 bg-slate-100 text-slate-700",
+            "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
+            "rounded-full border px-3 py-1 text-xs"
+          )}
+        >
+          via {provider === "openai" ? "openai" : "groq"}
+        </span>
+      )}
     </Card>
   );
 };

@@ -3,24 +3,33 @@
   "version": "0.1.0",
   "private": false,
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
-  "sideEffects": false,
-  "scripts": {
-    "build": "vite build",
-    "typecheck": "tsc --noEmit"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
   },
   "peerDependencies": {
-    "react": "^18 || ^19",
-    "react-dom": "^18 || ^19"
+    "react": ">=18",
+    "react-dom": ">=18"
   },
   "devDependencies": {
-    "vite": "^5.4.10",
-    "@vitejs/plugin-react-swc": "^4.3.1",
-    "typescript": "^5.6.3"
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "clean": "rimraf dist"
   }
 }

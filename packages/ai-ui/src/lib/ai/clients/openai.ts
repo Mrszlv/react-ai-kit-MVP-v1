@@ -19,8 +19,7 @@ export class OpenAIClient implements AIClient {
       },
       body: JSON.stringify(payload),
     });
-    if (!res.ok)
-      throw new Error(`OpenAI error ${res.status} ${await res.text()}`);
+    if (!res.ok) throw new Error(`OpenAI error ${res.status}`);
     const data = await res.json();
     return data.choices?.[0]?.message?.content ?? "";
   }
@@ -53,53 +52,36 @@ export class OpenAIClient implements AIClient {
     });
   }
 
-  async streamChat({
-    model,
-    messages,
-    temperature = 0.7,
-    onToken,
-    onDone,
-  }: {
-    model: string;
-    messages: AIMessage[];
-    temperature?: number;
-    onToken?: (t: string) => void;
-    onDone?: (s: string) => void;
-  }): Promise<string> {
+  async streamGenerate(
+    {
+      model,
+      prompt,
+      temperature = 0.7,
+    }: { model: string; prompt: string; temperature?: number },
+    handlers: { onToken?: (t: string) => void; onDone?: (full: string) => void }
+  ): Promise<void> {
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.apiKey}`,
       },
-      body: JSON.stringify({ model, messages, temperature, stream: true }),
+      body: JSON.stringify({
+        model,
+        temperature,
+        messages: [{ role: "user", content: prompt }],
+        stream: true,
+      }),
     });
-    if (!res.ok)
-      throw new Error(`OpenAI error ${res.status} ${await res.text()}`);
-    const full = await readOpenAISSE(res, (t) => onToken?.(t));
-    onDone?.(full);
-    return full;
-  }
+    if (!res.ok) throw new Error(`OpenAI error ${res.status}`);
 
-  async streamGenerate({
-    model,
-    prompt,
-    temperature = 0.7,
-    onToken,
-    onDone,
-  }: {
-    model: string;
-    prompt: string;
-    temperature?: number;
-    onToken?: (t: string) => void;
-    onDone?: (s: string) => void;
-  }): Promise<string> {
-    return this.streamChat({
-      model,
-      messages: [{ role: "user", content: prompt }],
-      temperature,
-      onToken,
-      onDone,
+    let full = "";
+    await readOpenAISSE(res, (delta) => {
+      if (typeof delta === "string") {
+        full += delta;
+        handlers.onToken?.(delta);
+      }
     });
+    handlers.onDone?.(full);
   }
 }

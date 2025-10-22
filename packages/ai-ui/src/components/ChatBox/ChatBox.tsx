@@ -1,4 +1,3 @@
-// src/components/ChatBox/ChatBox.tsx
 import React, { useMemo, useRef, useState } from "react";
 
 import type { AIMessage } from "../../lib/ai/types";
@@ -6,6 +5,8 @@ import { useAI } from "../../lib/ai/useAI";
 
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+
+import clsx from "clsx";
 
 export const ChatBox: React.FC = () => {
   const { chat, loading, error, provider } = useAI();
@@ -22,19 +23,34 @@ export const ChatBox: React.FC = () => {
     if (!input.trim()) return;
     const next = [...messages, { role: "user", content: input } as AIMessage];
     setInput("");
-    // важливо: передати актуальний масив (із новим повідомленням)
-    const reply = await chat([base, ...next]);
 
+    const reply = await chat([base, ...next]);
     setMessages([...next, { role: "assistant", content: reply }]);
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
   return (
     <Card className="space-y-4">
-      <div className="w-full min-h-40 max-h-[28rem] overflow-auto rounded-xl bg-white/60 p-3 text-sm">
-        <h3 className="text-lg font-semibold"> 💬 ChatBox</h3>
+      {/* Заголовок */}
+      <div className="flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+          💬 ChatBox
+        </h3>
+      </div>
+
+      {/* Стрічка чату */}
+      <div
+        className="
+          w-full min-h-40 max-h-112 overflow-auto rounded-xl border
+          bg-slate-50/80 p-3 text-sm
+          border-slate-200
+          dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100
+        "
+      >
         {messages.length === 0 && (
-          <div className="text-slate-500">Start the conversation</div>
+          <div className="text-slate-500 dark:text-slate-400">
+            Start the conversation
+          </div>
         )}
 
         {messages.map((m, i) => (
@@ -45,9 +61,12 @@ export const ChatBox: React.FC = () => {
             }`}
           >
             <div
-              className={`max-w-[80%] rounded-2xl px-3 py-2 ${
-                m.role === "user" ? "bg-indigo-600 text-white" : "bg-slate-100"
-              }`}
+              className={[
+                "max-w-[80%] rounded-2xl px-3 py-2 shadow-sm",
+                m.role === "user"
+                  ? "bg-indigo-600 text-white dark:bg-indigo-500"
+                  : "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700",
+              ].join(" ")}
             >
               {m.content}
             </div>
@@ -57,9 +76,17 @@ export const ChatBox: React.FC = () => {
         <div ref={endRef} />
       </div>
 
+      {/* Ввід + кнопка */}
       <div className="flex w-full gap-2">
         <input
-          className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          aria-label="Type a message"
+          className="
+            min-w-0 flex-1 rounded-xl border px-3 py-2 text-sm outline-none
+            placeholder:text-slate-400
+            border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500
+            dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500
+            dark:focus:ring-indigo-400
+          "
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -70,14 +97,20 @@ export const ChatBox: React.FC = () => {
           }}
           placeholder="Type a message..."
         />
-        <Button disabled={loading || input.length === 0} onClick={send}>
+        <Button disabled={loading || input.trim().length === 0} onClick={send}>
           {loading ? "…" : "Send"}
         </Button>
       </div>
 
       {provider && (
-        <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700">
-          via {provider === "openai" ? "OpenAI" : "Groq"}
+        <span
+          className={clsx(
+            "rounded-full border px-3 py-1 text-xs",
+            "border-slate-200 bg-slate-100 text-slate-700",
+            "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          )}
+        >
+          via {provider === "openai" ? "openai" : "groq"}
         </span>
       )}
 

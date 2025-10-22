@@ -3,9 +3,11 @@ module.exports = {
   darkMode: "class",
   content: [
     "./index.html",
-    "./src/**/*.{ts,tsx}",
-    "./packages/ai-ui/src/**/*.{ts,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "./packages/**/*.{js,ts,jsx,tsx}",
   ],
-  theme: { extend: {} },
+  theme: {
+    extend: {},
+  },
   plugins: [],
 };

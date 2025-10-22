@@ -6,6 +6,7 @@ import type { LangCode } from "../../lib/i18n/langs";
 
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+import clsx from "clsx";
 
 type Tone =
   | "neutral"
@@ -126,12 +127,18 @@ export const Rewriter: React.FC<{
   return (
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-lg font-semibold">✍️ {title}</h3>
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+          ✍️ {title}
+        </h3>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <select
             title="Tone"
-            className="rounded-xl border px-3 py-2 text-sm"
+            className={clsx(
+              "rounded-xl border px-2 py-1 text-sm cursor-pointer",
+              "bg-white/90 border-slate-200 text-slate-900",
+              "dark:bg-slate-900/70 dark:border-slate-700 dark:text-slate-100"
+            )}
             value={tone}
             onChange={(e) => setTone(e.target.value as Tone)}
           >
@@ -145,7 +152,11 @@ export const Rewriter: React.FC<{
 
           <select
             title="Length"
-            className="rounded-xl border px-3 py-2 text-sm"
+            className={clsx(
+              "rounded-xl border px-2 py-1 text-sm cursor-pointer",
+              "bg-white/90 border-slate-200 text-slate-900",
+              "dark:bg-slate-900/70 dark:border-slate-700 dark:text-slate-100"
+            )}
             value={length}
             onChange={(e) => setLength(e.target.value as Length)}
           >
@@ -156,7 +167,11 @@ export const Rewriter: React.FC<{
 
           <select
             title="Creativity"
-            className="rounded-xl border px-3 py-2 text-sm"
+            className={clsx(
+              "rounded-xl border px-2 py-1 text-sm cursor-pointer",
+              "bg-white/90 border-slate-200 text-slate-900",
+              "dark:bg-slate-900/70 dark:border-slate-700 dark:text-slate-100"
+            )}
             value={creativity}
             onChange={(e) => setCreativity(e.target.value as Creativity)}
           >
@@ -167,7 +182,11 @@ export const Rewriter: React.FC<{
 
           <select
             title="Target language"
-            className="rounded-xl border px-3 py-2 text-sm"
+            className={clsx(
+              "rounded-xl border px-2 py-1 text-sm cursor-pointer",
+              "bg-white/90 border-slate-200 text-slate-900",
+              "dark:bg-slate-900/70 dark:border-slate-700 dark:text-slate-100"
+            )}
             value={lang}
             onChange={(e) => setLang(e.target.value as LangCode | "auto")}
           >
@@ -177,17 +196,15 @@ export const Rewriter: React.FC<{
               </option>
             ))}
           </select>
-
-          {provider && (
-            <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700">
-              via {provider === "openai" ? "OpenAI" : "Groq"}
-            </span>
-          )}
         </div>
       </div>
 
       <textarea
-        className="h-44 w-full resize-none rounded-xl border p-3 text-sm"
+        className={clsx(
+          "h-44 w-full resize-none rounded-xl border p-3 text-sm outline-none",
+          "bg-white/90 border-slate-200 text-slate-900 placeholder:text-slate-400",
+          "dark:bg-slate-900/70 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-400"
+        )}
         placeholder={placeholder}
         value={src}
         onChange={(e) => setSrc(e.target.value)}
@@ -200,9 +217,26 @@ export const Rewriter: React.FC<{
         {error && <span className="text-xs text-red-600">{error}</span>}
       </div>
 
-      <div className="min-h-16 w-full whitespace-pre-wrap rounded-xl border bg-white/60 p-3 text-sm">
+      <div
+        className={clsx(
+          "min-h-16 w-full whitespace-pre-wrap rounded-xl border p-3 text-sm",
+          "bg-white/70 border-slate-200 text-slate-900",
+          "dark:bg-slate-900/60 dark:border-slate-700 dark:text-slate-100"
+        )}
+      >
         {out || "Output will appear here"}
       </div>
+      {provider && (
+        <span
+          className={clsx(
+            "rounded-full border px-3 py-1 text-xs",
+            "border-slate-200 bg-slate-100 text-slate-700",
+            "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          )}
+        >
+          via {provider === "openai" ? "openai" : "groq"}
+        </span>
+      )}
     </Card>
   );
 };

@@ -1,39 +1,35 @@
-// src/lib/ai/clients/fallback.ts
-import { type AIClient, type AIMessage, type StreamHandlers } from "../types";
+import type { AIClient, StreamHandlers } from "../types";
 
+/**
+ * FallbackClient — проксі, який пробує primary, інакше secondary.
+ * name відповідає активному провайдеру ("openai" | "groq"), щоб пройти типи.
+ */
 export class FallbackClient implements AIClient {
-  name: "openai" | "groq";
+  readonly name: "openai" | "groq";
+  private primary?: AIClient;
+  private secondary?: AIClient;
 
-  private primary?: AIClient | null;
-  private secondary?: AIClient | null;
+  constructor(primary?: AIClient, secondary?: AIClient) {
+    this.primary = primary;
+    this.secondary = secondary;
 
-  constructor(primary?: AIClient | null, secondary?: AIClient | null) {
-    this.primary = primary ?? null;
-    this.secondary = secondary ?? null;
-    this.name = (this.primary?.name ?? this.secondary?.name)!;
+    const n = primary?.name ?? secondary?.name;
+    if (!n) throw new Error("No AI client configured for FallbackClient");
+    this.name = n as "openai" | "groq";
   }
 
-  private rethrow(e: unknown): never {
-    throw e instanceof Error ? e : new Error(String(e));
+  private get active(): AIClient {
+    if (this.primary) return this.primary;
+    if (this.secondary) return this.secondary!;
+    throw new Error("No AI client configured");
   }
 
-  async chat(opts: {
-    model: string;
-    messages: AIMessage[];
-    temperature?: number;
-  }): Promise<string> {
+  async chat(opts: { model: string; messages: any[]; temperature?: number }) {
     try {
-      if (this.primary) {
-        this.name = this.primary.name;
-        return await this.primary.chat(opts);
-      }
-      throw new Error("No primary client");
-    } catch (e) {
-      if (this.secondary) {
-        this.name = this.secondary.name;
-        return this.secondary.chat(opts);
-      }
-      this.rethrow(e);
+      return await this.active.chat(opts);
+    } catch (err) {
+      if (this.secondary) return this.secondary.chat(opts);
+      throw err;
     }
   }
 
@@ -41,63 +37,27 @@ export class FallbackClient implements AIClient {
     model: string;
     prompt: string;
     temperature?: number;
-  }): Promise<string> {
+  }) {
     try {
-      if (this.primary) {
-        this.name = this.primary.name;
-        return await this.primary.generate(opts);
-      }
-      throw new Error("No primary client");
-    } catch (e) {
-      if (this.secondary) {
-        this.name = this.secondary.name;
-        return this.secondary.generate(opts);
-      }
-      this.rethrow(e);
-    }
-  }
-
-  async streamChat(
-    opts: {
-      model: string;
-      messages: AIMessage[];
-      temperature?: number;
-    } & StreamHandlers
-  ): Promise<string> {
-    try {
-      if (this.primary) {
-        this.name = this.primary.name;
-        return await this.primary.streamChat(opts);
-      }
-      throw new Error("No primary client");
-    } catch (e) {
-      if (this.secondary) {
-        this.name = this.secondary.name;
-        return this.secondary.streamChat(opts);
-      }
-      this.rethrow(e);
+      return await this.active.generate(opts);
+    } catch (err) {
+      if (this.secondary) return this.secondary.generate(opts);
+      throw err;
     }
   }
 
   async streamGenerate(
-    opts: {
-      model: string;
-      prompt: string;
-      temperature?: number;
-    } & StreamHandlers
-  ): Promise<string> {
+    opts: { model: string; prompt: string; temperature?: number },
+    handlers: StreamHandlers
+  ): Promise<void> {
     try {
-      if (this.primary) {
-        this.name = this.primary.name;
-        return await this.primary.streamGenerate(opts);
-      }
-      throw new Error("No primary client");
-    } catch (e) {
+      await this.active.streamGenerate(opts, handlers);
+    } catch (err) {
       if (this.secondary) {
-        this.name = this.secondary.name;
-        return this.secondary.streamGenerate(opts);
+        await this.secondary.streamGenerate(opts, handlers);
+        return;
       }
-      this.rethrow(e);
+      throw err;
     }
   }
 }

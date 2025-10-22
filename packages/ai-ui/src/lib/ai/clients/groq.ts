@@ -10,13 +10,6 @@ export class GroqClient implements AIClient {
     this.apiKey = apiKey;
   }
 
-  private mapModel(model: string) {
-    // якщо передали OpenAI-модель — замінюємо
-    if (model.startsWith("gpt-") || model.startsWith("o1-"))
-      return "llama-3.1-8b-instant";
-    return model;
-  }
-
   private async postChat(payload: unknown): Promise<string> {
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",
@@ -27,7 +20,7 @@ export class GroqClient implements AIClient {
       body: JSON.stringify(payload),
     });
     if (!res.ok)
-      throw new Error(`Groq error ${res.status} ${await res.text()}`);
+      throw new Error(`Groq error ${res.status}: ${await res.text()}`);
     const data = await res.json();
     return data.choices?.[0]?.message?.content ?? "";
   }
@@ -41,11 +34,11 @@ export class GroqClient implements AIClient {
     messages: AIMessage[];
     temperature?: number;
   }): Promise<string> {
-    return this.postChat({
-      model: this.mapModel(model),
-      messages,
-      temperature,
-    });
+    // Мапінг моделей, якщо треба
+    if (model.startsWith("gpt-") || model.startsWith("o1-")) {
+      model = "llama-3.1-8b-instant";
+    }
+    return this.postChat({ model, messages, temperature });
   }
 
   async generate({
@@ -57,26 +50,27 @@ export class GroqClient implements AIClient {
     prompt: string;
     temperature?: number;
   }): Promise<string> {
+    if (model.startsWith("gpt-") || model.startsWith("o1-")) {
+      model = "llama-3.1-8b-instant";
+    }
     return this.postChat({
-      model: this.mapModel(model),
+      model,
       messages: [{ role: "user", content: prompt }],
       temperature,
     });
   }
 
-  async streamChat({
-    model,
-    messages,
-    temperature = 0.7,
-    onToken,
-    onDone,
-  }: {
-    model: string;
-    messages: AIMessage[];
-    temperature?: number;
-    onToken?: (t: string) => void;
-    onDone?: (s: string) => void;
-  }): Promise<string> {
+  async streamGenerate(
+    {
+      model,
+      prompt,
+      temperature = 0.7,
+    }: { model: string; prompt: string; temperature?: number },
+    handlers: { onToken?: (t: string) => void; onDone?: (full: string) => void }
+  ): Promise<void> {
+    if (model.startsWith("gpt-") || model.startsWith("o1-")) {
+      model = "llama-3.1-8b-instant";
+    }
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -84,33 +78,21 @@ export class GroqClient implements AIClient {
         Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify({
-        model: this.mapModel(model),
-        messages,
+        model,
         temperature,
+        messages: [{ role: "user", content: prompt }],
         stream: true,
       }),
     });
-    if (!res.ok)
-      throw new Error(`Groq error ${res.status} ${await res.text()}`);
-    const full = await readOpenAISSE(res, (t) => onToken?.(t));
-    onDone?.(full);
-    return full;
-  }
+    if (!res.ok) throw new Error(`Groq error ${res.status}`);
 
-  async streamGenerate(args: {
-    model: string;
-    prompt: string;
-    temperature?: number;
-    onToken?: (t: string) => void;
-    onDone?: (s: string) => void;
-  }) {
-    const { model, prompt, temperature = 0.7, onToken, onDone } = args;
-    return this.streamChat({
-      model,
-      messages: [{ role: "user", content: prompt }],
-      temperature,
-      onToken,
-      onDone,
+    let full = "";
+    await readOpenAISSE(res, (delta) => {
+      if (typeof delta === "string") {
+        full += delta;
+        handlers.onToken?.(delta);
+      }
     });
+    handlers.onDone?.(full);
   }
 }

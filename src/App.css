@@ -1,6 +1,30 @@
-#root {
-  max-width: 1280px;
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  color: #f2f2f2;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.app__content {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+/* Адаптив */
+@media (max-width: 768px) {
+  .app__content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app__content {
+    padding: 0.75rem;
+  }
 }
