@@ -5,6 +5,7 @@ export const Footer: React.FC = () => {
   return (
     <footer className="footer">
       <div className="footer__inner">
+        <img className="footer__icon" src="/svg/logo.svg" alt="logo" />
         <p className="footer__text">
           © {new Date().getFullYear()} AI-UI Components. Built with using React,
           Vite & TypeScript.

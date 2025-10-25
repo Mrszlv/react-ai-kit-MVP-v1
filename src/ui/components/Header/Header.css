@@ -20,18 +20,18 @@
 .header__logo {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 15px;
   margin-bottom: 0.25rem;
 }
 
 .header__icon {
-  font-size: 1.6rem;
+  width: 35px;
+  height: 35px;
 }
 
 .header__title {
   font-size: 1.4rem;
   font-weight: 600;
-  color: #f2f2f2;
   letter-spacing: 0.5px;
 }
 
