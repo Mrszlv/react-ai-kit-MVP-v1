@@ -1,28 +1,52 @@
-// packages/ai-ui/src/lib/ai/useAI.ts
 import { useState } from "react";
-import { useAIContext } from "./AIContext";
 import type { AIMessage } from "./types";
+import { useAIContext } from "./AIContext";
 
-export function useAI(model?: string) {
-  const { client, defaultModel } = useAIContext();
+export function useAI(defaultModel?: string) {
+  const {
+    client,
+    fallback,
+    defaultModel: ctxModel,
+    provider,
+    setProvider,
+  } = useAIContext();
+  const model = defaultModel ?? ctxModel;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const provider: "openai" | "groq" | null =
-    (client && (client as any).name) || null;
+  async function withFallback<T>(
+    fn: (c: typeof client) => Promise<T>
+  ): Promise<T> {
+    try {
+      return await fn(client);
+    } catch (e: any) {
+      const message = String(e?.message ?? e);
+
+      if (fallback && provider === "openai") {
+        const shouldFallback = /429|401|5\d\d|rate|quota|network|fetch/i.test(
+          message
+        );
+        if (shouldFallback) {
+          setProvider("groq");
+          setError("");
+
+          return await fn(fallback);
+        }
+      }
+      throw e;
+    }
+  }
 
   async function chat(messages: AIMessage[], temperature = 0.7) {
     setLoading(true);
     setError(null);
     try {
-      return await client.chat({
-        model: model ?? defaultModel,
-        messages,
-        temperature,
-      });
+      return await withFallback((c) =>
+        c.chat({ model, messages, temperature })
+      );
     } catch (e: any) {
-      setError(e?.message ?? String(e));
+      setError(String(e?.message ?? e));
       return "";
     } finally {
       setLoading(false);
@@ -33,13 +57,11 @@ export function useAI(model?: string) {
     setLoading(true);
     setError(null);
     try {
-      return await client.generate({
-        model: model ?? defaultModel,
-        prompt,
-        temperature,
-      });
+      return await withFallback((c) =>
+        c.generate({ model, prompt, temperature })
+      );
     } catch (e: any) {
-      setError(e?.message ?? String(e));
+      setError(String(e?.message ?? e));
       return "";
     } finally {
       setLoading(false);
@@ -50,26 +72,31 @@ export function useAI(model?: string) {
     prompt: string,
     handlers: {
       onToken?: (t: string) => void;
-      onDone?: (finalTxt: string) => void;
+      onDone?: (final: string) => void;
     },
     temperature = 0.7
   ) {
     setLoading(true);
     setError(null);
     try {
-      await client.streamGenerate(
-        { model: model ?? defaultModel, prompt, temperature },
-        {
-          onToken: (t: string) => handlers.onToken?.(t),
-          onDone: (finalTxt: string) => handlers.onDone?.(finalTxt),
-        }
+      await withFallback((c) =>
+        c.streamGenerate(prompt, handlers, { model, temperature })
       );
     } catch (e: any) {
-      setError(e?.message ?? String(e));
+      setError(String(e?.message ?? e));
     } finally {
       setLoading(false);
     }
   }
 
-  return { chat, generate, streamGenerate, loading, error, provider };
+  return {
+    // API
+    chat,
+    generate,
+    streamGenerate,
+
+    loading,
+    error,
+    provider,
+  };
 }

@@ -1,11 +1,10 @@
 import React from "react";
-import { Summarizer } from "@ai-ui/components";
-import { DemoAIProvider } from "../DemoAIProvider";
+import AIUI from "@ai-ui/components"; // ← дефолтний імпорт (AIUI — об’єкт)
 
 export const SummarizerDemo: React.FC = () => {
   return (
-    <DemoAIProvider>
-      <Summarizer />
-    </DemoAIProvider>
+    <AIUI.AIProvider>
+      <AIUI.Summarizer />
+    </AIUI.AIProvider>
   );
 };

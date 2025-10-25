@@ -1,31 +1,30 @@
-import type { AIClient, StreamHandlers } from "../types";
+import type { AIClient, AIMessage, StreamHandlers } from "../types";
 
 export class FallbackClient implements AIClient {
-  readonly name: "openai" | "groq";
-  private primary?: AIClient;
-  private secondary?: AIClient;
+  readonly name = "fallback" as const;
 
-  constructor(primary?: AIClient, secondary?: AIClient) {
-    this.primary = primary;
-    this.secondary = secondary;
+  constructor(private primary: AIClient, private secondary?: AIClient) {}
 
-    const n = primary?.name ?? secondary?.name;
-    if (!n) throw new Error("No AI client configured for FallbackClient");
-    this.name = n as "openai" | "groq";
+  private pick(model: string) {
+    if (!model.includes("fallback")) return this.primary;
+    return this.primary ?? this.secondary;
   }
 
-  private get active(): AIClient {
-    if (this.primary) return this.primary;
-    if (this.secondary) return this.secondary!;
-    throw new Error("No AI client configured");
-  }
+  async chat(opts: {
+    model: string;
+    messages: AIMessage[];
+    temperature?: number;
+  }): Promise<string> {
+    const client = this.pick(opts.model);
+    if (!client) throw new Error("No active AI client configured");
 
-  async chat(opts: { model: string; messages: any[]; temperature?: number }) {
     try {
-      return await this.active.chat(opts);
-    } catch (err) {
-      if (this.secondary) return this.secondary.chat(opts);
-      throw err;
+      return await client.chat(opts);
+    } catch (e: any) {
+      if (this.secondary && (e?.status === 429 || e?.name === "TypeError")) {
+        return this.secondary.chat(opts);
+      }
+      throw e;
     }
   }
 
@@ -33,27 +32,35 @@ export class FallbackClient implements AIClient {
     model: string;
     prompt: string;
     temperature?: number;
-  }) {
+  }): Promise<string> {
+    const client = this.pick(opts.model);
+    if (!client) throw new Error("No active AI client configured");
+
     try {
-      return await this.active.generate(opts);
-    } catch (err) {
-      if (this.secondary) return this.secondary.generate(opts);
-      throw err;
+      return await client.generate(opts);
+    } catch (e: any) {
+      if (this.secondary && (e?.status === 429 || e?.name === "TypeError")) {
+        return this.secondary.generate(opts);
+      }
+      throw e;
     }
   }
 
   async streamGenerate(
-    opts: { model: string; prompt: string; temperature?: number },
+    opts: { model: string; prompt: string; temperature?: number | undefined },
     handlers: StreamHandlers
   ): Promise<void> {
+    const client = this.pick(opts.model);
+    if (!client) throw new Error("No active AI client configured");
+
     try {
-      await this.active.streamGenerate(opts, handlers);
-    } catch (err) {
-      if (this.secondary) {
+      await client.streamGenerate(opts, handlers);
+    } catch (e: any) {
+      if (this.secondary && (e?.status === 429 || e?.name === "TypeError")) {
         await this.secondary.streamGenerate(opts, handlers);
         return;
       }
-      throw err;
+      throw e;
     }
   }
 }

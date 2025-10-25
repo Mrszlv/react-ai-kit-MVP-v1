@@ -1,21 +1,17 @@
+export type Role = "system" | "user" | "assistant";
+
 export type AIMessage = {
-  role: "system" | "user" | "assistant";
+  role: Role;
   content: string;
 };
 
 export type StreamHandlers = {
   onToken?: (t: string) => void;
-  onDone?: (full: string) => void;
+  onDone?: (final: string) => void;
 };
 
 export interface AIClient {
-  name: "openai" | "groq";
-
-  chat(opts: {
-    model: string;
-    messages: AIMessage[];
-    temperature?: number;
-  }): Promise<string>;
+  name: string;
 
   generate(opts: {
     model: string;
@@ -23,8 +19,15 @@ export interface AIClient {
     temperature?: number;
   }): Promise<string>;
 
+  chat(opts: {
+    model: string;
+    messages: AIMessage[];
+    temperature?: number;
+  }): Promise<string>;
+
   streamGenerate(
-    opts: { model: string; prompt: string; temperature?: number },
-    handlers: StreamHandlers
+    prompt: string,
+    handlers: StreamHandlers,
+    opts?: { model: string; temperature?: number }
   ): Promise<void>;
 }

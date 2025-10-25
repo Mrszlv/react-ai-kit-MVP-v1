@@ -1,40 +1,44 @@
 export async function readOpenAISSE(
   res: Response,
-  onDelta: (t: string) => void
+  onDelta: (chunk: string) => void
 ): Promise<string> {
   const reader = res.body!.getReader();
   const decoder = new TextDecoder("utf-8");
-  let buf = "",
-    full = "";
+  let buffer = "";
+  let full = "";
 
   while (true) {
-    const { value, done } = await reader.read();
+    const { done, value } = await reader.read();
     if (done) break;
-    buf += decoder.decode(value, { stream: true });
+    buffer += decoder.decode(value, { stream: true });
 
-    const parts = buf.split("\n\n");
-    buf = parts.pop() || "";
-
-    for (const part of parts) {
-      if (!part.startsWith("data:")) continue;
-      const payload = part.replace(/^data:\s*/g, "").trim();
-      if (payload === "[DONE]") break;
-
-      try {
-        const json = JSON.parse(payload);
-
-        const delta =
-          json.choices?.[0]?.delta?.content ??
-          json.choices?.[0]?.message?.content ??
-          "";
-        if (delta) {
-          onDelta(delta);
-          full += delta;
+    for (const line of buffer.split("\n")) {
+      if (!line) continue;
+      if (line.startsWith("data: ")) {
+        const payload = line.slice(6).trim();
+        if (payload === "[DONE]") {
+          buffer = "";
+          break;
         }
-      } catch {
-        /* ignore line */
+        try {
+          const json = JSON.parse(payload);
+          const delta: string =
+            json.choices?.[0]?.delta?.content ??
+            json.choices?.[0]?.message?.content ??
+            json.choices?.[0]?.text ??
+            "";
+          if (delta) {
+            full += delta;
+            onDelta(delta);
+          }
+        } catch {
+          /* ignore malformed chunk */
+        }
       }
     }
+
+    buffer = buffer.endsWith("\n") ? "" : buffer.split("\n").at(-1) ?? "";
   }
+
   return full;
 }

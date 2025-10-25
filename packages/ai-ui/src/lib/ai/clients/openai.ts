@@ -2,7 +2,7 @@ import type { AIClient, AIMessage } from "../types";
 import { readOpenAISSE } from "../utils/sse";
 
 export class OpenAIClient implements AIClient {
-  readonly name = "openai" as const;
+  name = "openai" as const;
   private apiKey: string;
   private baseUrl = "https://api.openai.com/v1";
 
@@ -10,78 +10,73 @@ export class OpenAIClient implements AIClient {
     this.apiKey = apiKey;
   }
 
-  private async postChat(payload: unknown): Promise<string> {
-    const res = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`OpenAI error ${res.status}`);
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content ?? "";
+  private headers(stream = false) {
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${this.apiKey}`,
+      ...(stream ? { Accept: "text/event-stream" } : {}),
+    };
   }
 
-  async chat({
-    model,
-    messages,
-    temperature = 0.7,
-  }: {
-    model: string;
-    messages: AIMessage[];
-    temperature?: number;
-  }): Promise<string> {
-    return this.postChat({ model, messages, temperature });
-  }
-
-  async generate({
-    model,
-    prompt,
-    temperature = 0.7,
-  }: {
+  async generate(opts: {
     model: string;
     prompt: string;
     temperature?: number;
-  }): Promise<string> {
-    return this.postChat({
-      model,
-      messages: [{ role: "user", content: prompt }],
-      temperature,
+  }) {
+    const res = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: this.headers(false),
+      body: JSON.stringify({
+        model: opts.model,
+        temperature: opts.temperature ?? 0.7,
+        messages: [{ role: "user", content: opts.prompt }],
+      }),
     });
+    if (!res.ok) throw new Error(await res.text());
+    const json = await res.json();
+    return json.choices?.[0]?.message?.content ?? "";
+  }
+
+  async chat(opts: {
+    model: string;
+    messages: AIMessage[];
+    temperature?: number;
+  }) {
+    const res = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: this.headers(false),
+      body: JSON.stringify({
+        model: opts.model,
+        temperature: opts.temperature ?? 0.7,
+        messages: opts.messages,
+      }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const json = await res.json();
+    return json.choices?.[0]?.message?.content ?? "";
   }
 
   async streamGenerate(
-    {
-      model,
-      prompt,
-      temperature = 0.7,
-    }: { model: string; prompt: string; temperature?: number },
-    handlers: { onToken?: (t: string) => void; onDone?: (full: string) => void }
-  ): Promise<void> {
+    prompt: string,
+    handlers: {
+      onToken?: (t: string) => void;
+      onDone?: (final: string) => void;
+    },
+    opts?: { model: string; temperature?: number }
+  ) {
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
+      headers: this.headers(true),
       body: JSON.stringify({
-        model,
-        temperature,
+        model: opts?.model ?? "gpt-4o-mini",
+        temperature: opts?.temperature ?? 0.7,
         messages: [{ role: "user", content: prompt }],
         stream: true,
       }),
     });
-    if (!res.ok) throw new Error(`OpenAI error ${res.status}`);
+    if (!res.ok) throw new Error(await res.text());
 
-    let full = "";
-    await readOpenAISSE(res, (delta) => {
-      if (typeof delta === "string") {
-        full += delta;
-        handlers.onToken?.(delta);
-      }
-    });
+    const full = await readOpenAISSE(res, (chunk) => handlers.onToken?.(chunk));
     handlers.onDone?.(full);
   }
 }

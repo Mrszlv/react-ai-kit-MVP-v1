@@ -1,11 +1,10 @@
 import React from "react";
-import { ChatBox } from "@ai-ui/components";
-import { DemoAIProvider } from "../DemoAIProvider";
+import AIUI from "@ai-ui/components"; // ← дефолтний імпорт (AIUI — об’єкт)
 
 export const ChatDemo: React.FC = () => {
   return (
-    <DemoAIProvider>
-      <ChatBox />
-    </DemoAIProvider>
+    <AIUI.AIProvider>
+      <AIUI.ChatBox />
+    </AIUI.AIProvider>
   );
 };
