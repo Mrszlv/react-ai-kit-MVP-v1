@@ -12,3 +12,5 @@ npm ci
 npm run dev      # Vite демо
 npm run build    # збирає workspaces (у т.ч. пакет)
 ```
+
+import { AIProvider, ChatBox } from "@mrszlv/ai-ui-components";

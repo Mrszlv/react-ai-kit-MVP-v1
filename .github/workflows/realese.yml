@@ -17,7 +17,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build --workspaces
-      - name: Publish @ai-ui/components
-        run: npm publish --workspace @ai-ui/components --access public
+      - name: Publish @mrszlv/ai-ui-components
+        run: npm publish --workspace @mrszlv/ai-ui-components --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

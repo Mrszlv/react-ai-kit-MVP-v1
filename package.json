@@ -8,13 +8,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build -w @mrszlv/ai-ui-components",
+    "changeset": "changeset",
+    "version-pack": "changeset version",
     "lint": "eslint .",
     "preview": "vite preview",
     "prepare": "husky install"
   },
   "dependencies": {
-    "@ai-ui/components": "^0.1.0",
+    "@mrszlv/ai-ui-components": "workspace:*",
     "clsx": "^2.1.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
