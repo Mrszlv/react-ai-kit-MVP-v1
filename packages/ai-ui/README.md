@@ -1,10 +1,10 @@
 # @ai-ui/components
 
-React-компоненти з інтеграцією AI (OpenAI/Groq) + утиліти.
+React AI UI kit: **ChatBox**, **Translator**, **Rewriter**, **Summarizer**, **AIProvider**.
+Стилізація — Tailwind utility-класи (у вашому застосунку має бути Tailwind).
 
 ## Встановлення
 
 ```bash
 npm i @ai-ui/components
-# peer deps: react, react-dom, tailwind у вашому застосунку
 ```

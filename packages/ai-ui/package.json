@@ -1,6 +1,6 @@
 {
   "name": "@ai-ui/components",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
   "sideEffects": false,
@@ -8,7 +8,9 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "exports": {
     ".": {
@@ -17,13 +19,19 @@
       "require": "./dist/index.cjs"
     }
   },
+  "engines": {
+    "node": ">=18"
+  },
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"
   },
+  "dependencies": {
+    "clsx": "^2.1.1"
+  },
   "devDependencies": {
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"
   },
