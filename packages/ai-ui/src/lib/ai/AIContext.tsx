@@ -1,6 +1,8 @@
 import React, { createContext, useContext } from "react";
 import type { AIClient } from "./types";
 
+/* eslint-disable react-refresh/only-export-components */
+
 export type ProviderName = "openai" | "groq";
 
 export type AIContextType = {

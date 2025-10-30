@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
+
 import { useAI } from "../../lib/ai/useAI";
+
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 
@@ -10,7 +12,9 @@ type Tone =
   | "friendly"
   | "professional"
   | "confident";
+
 type Length = "shorter" | "same" | "longer";
+
 type Creativity = "low" | "medium" | "high";
 
 function buildPrompt(
@@ -69,10 +73,15 @@ export const Rewriter: React.FC = () => {
   const { streamGenerate, loading, error, provider } = useAI();
 
   const [tone, setTone] = useState<Tone>("neutral");
+
   const [length, setLength] = useState<Length>("same");
+
   const [creativity, setCreativity] = useState<Creativity>("medium");
+
   const [lang, setLang] = useState<string | "auto">("auto");
+
   const [src, setSrc] = useState("");
+
   const [out, setOut] = useState("");
 
   const canRun = useMemo(() => src.trim().length > 0, [src]);
@@ -193,12 +202,14 @@ export const Rewriter: React.FC = () => {
         {out || "Output will appear here"}
       </div>
 
-      {provider && (
-        <span className="mr-2.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          via {provider}
-        </span>
-      )}
-      {error && <span className="text-xs text-red-600">{error}</span>}
+      <div className="flex items-center gap-3">
+        {provider && (
+          <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            via {provider}
+          </span>
+        )}
+        {error && <p className="text-xs text-slate-400">{error}</p>}
+      </div>
     </Card>
   );
 };

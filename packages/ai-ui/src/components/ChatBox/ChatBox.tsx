@@ -1,14 +1,19 @@
 import React, { useMemo, useRef, useState } from "react";
+
 import type { AIMessage } from "../../lib/ai/types";
 import { useAI } from "../../lib/ai/useAI";
+
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+
 import clsx from "clsx";
 
 export const ChatBox: React.FC = () => {
   const { chat, loading, error, provider } = useAI();
   const [messages, setMessages] = useState<AIMessage[]>([]);
+
   const [input, setInput] = useState("");
+
   const endRef = useRef<HTMLDivElement>(null);
 
   const system = useMemo<AIMessage>(
@@ -49,6 +54,7 @@ export const ChatBox: React.FC = () => {
             Start the conversation
           </div>
         )}
+
         {messages.map((m, i) => (
           <div
             key={i}
@@ -69,6 +75,7 @@ export const ChatBox: React.FC = () => {
             </div>
           </div>
         ))}
+
         <div ref={endRef} />
       </div>
 
@@ -91,6 +98,7 @@ export const ChatBox: React.FC = () => {
           }}
           placeholder="Type a message..."
         />
+
         <Button disabled={loading || input.trim().length === 0} onClick={send}>
           {loading ? "…" : "Send"}
         </Button>
@@ -102,7 +110,7 @@ export const ChatBox: React.FC = () => {
             via {provider}
           </span>
         )}
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        {error && <p className="text-xs text-slate-400">{error}</p>}
       </div>
     </Card>
   );

@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+
 import { useAI } from "../../lib/ai/useAI";
+
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 
@@ -20,9 +22,13 @@ function buildPrompt(text: string, from: string, to: string) {
 
 export const Translator: React.FC = () => {
   const { streamGenerate, loading, error, provider } = useAI();
+
   const [from, setFrom] = useState("Ukrainian");
+
   const [to, setTo] = useState("English");
+
   const [src, setSrc] = useState("");
+
   const [out, setOut] = useState("");
 
   async function run() {
@@ -123,12 +129,15 @@ export const Translator: React.FC = () => {
       >
         {out || "Output will appear here"}
       </div>
-      {provider && (
-        <span className=" mr-2.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          via {provider}
-        </span>
-      )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+
+      <div className="flex items-center gap-3">
+        {provider && (
+          <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            via {provider}
+          </span>
+        )}
+        {error && <p className="text-xs text-slate-400">{error}</p>}
+      </div>
     </Card>
   );
 };

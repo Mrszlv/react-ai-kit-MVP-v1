@@ -1,5 +1,4 @@
 import React from "react";
-import "./Tabs.css";
 
 type TabsProps = {
   activeTab: "chat" | "translator" | "rewriter" | "summarizer";
@@ -15,19 +14,22 @@ export const Tabs: React.FC<TabsProps> = ({ activeTab, onChange }) => {
   ];
 
   return (
-    <nav className="tabs">
-      <ul className="tabs__list">
+    <nav className="w-full flex justify-center mt-6 mb-10">
+      <ul className="flex flex-wrap gap-0.5 sm:gap-3 justify-center">
         {tabs.map((tab) => (
           <li key={tab.id}>
             <button
-              className={`tabs__button ${
-                activeTab === tab.id ? "tabs__button--active" : ""
-              }`}
               onClick={() =>
                 onChange(
                   tab.id as "chat" | "translator" | "rewriter" | "summarizer"
                 )
               }
+              className={`px-4 py-2 sm:px-6 sm:py-2.5 text-sm sm:text-base rounded-full font-medium transition-all duration-200
+                ${
+                  activeTab === tab.id
+                    ? "bg-indigo-500 text-white shadow-md dark:bg-indigo-400"
+                    : "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700"
+                }`}
             >
               {tab.label}
             </button>

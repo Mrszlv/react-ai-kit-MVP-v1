@@ -1,0 +1,40 @@
+src/
+scripts/
+*.ts
+*.tsx
+tsconfig.json
+tsup.config.ts
+
+
+# Source code
+src/
+scripts/
+tests/
+__tests__/
+__mocks__/
+
+# Config files
+tsconfig.json
+tsconfig.*.json
+tsup.config.ts
+postcss.config.cjs
+tailwind.config.cjs
+vite.config.ts
+*.config.js
+*.config.ts
+
+# Env files
+.env
+.env.*
+
+# Git & CI
+.git/
+.github/
+.husky/
+.vscode/
+.idea/
+.DS_Store
+
+# Misc
+*.log
+*.tgz

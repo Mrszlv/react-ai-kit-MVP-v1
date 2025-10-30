@@ -1,13 +1,19 @@
 import React, { useState } from "react";
+
 import { useAI } from "../../lib/ai/useAI";
+
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 
 export const Summarizer: React.FC = () => {
   const { streamGenerate, loading, error, provider } = useAI();
+
   const [src, setSrc] = useState("");
+
   const [out, setOut] = useState("");
+
   const [style, setStyle] = useState("Bulleted");
+
   const [lang, setLang] = useState("English");
 
   function buildPrompt(text: string, language: string, format: string) {
@@ -40,6 +46,7 @@ export const Summarizer: React.FC = () => {
         <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
           📝 Summarizer
         </h3>
+
         <div className="ml-auto flex items-center gap-2">
           <select
             title="selectSummizer"
@@ -64,6 +71,7 @@ export const Summarizer: React.FC = () => {
               </option>
             ))}
           </select>
+
           <select
             title="selectSummizer"
             className="rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700"
@@ -100,12 +108,14 @@ export const Summarizer: React.FC = () => {
         {out || "Output will appear here"}
       </div>
 
-      {provider && (
-        <span className="mb-2.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          via {provider}
-        </span>
-      )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      <div className="flex items-center gap-3">
+        {provider && (
+          <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            via {provider}
+          </span>
+        )}
+        {error && <p className="text-xs text-slate-400">{error}</p>}
+      </div>
     </Card>
   );
 };

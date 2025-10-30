@@ -20,8 +20,9 @@ export function useAI(defaultModel?: string) {
   ): Promise<T> {
     try {
       return await fn(client);
-    } catch (e: any) {
-      const message = String(e?.message ?? e);
+    } catch (e: unknown) {
+      const message =
+        e instanceof Error ? e.message : String(e ?? "Unknown error");
 
       if (fallback && provider === "openai") {
         const shouldFallback = /429|401|5\d\d|rate|quota|network|fetch/i.test(
@@ -29,12 +30,12 @@ export function useAI(defaultModel?: string) {
         );
         if (shouldFallback) {
           setProvider("groq");
-          setError("");
-
+          setError("falling back to groq ai provider");
           return await fn(fallback);
         }
       }
-      throw e;
+
+      throw e instanceof Error ? e : new Error(String(e));
     }
   }
 
@@ -45,8 +46,8 @@ export function useAI(defaultModel?: string) {
       return await withFallback((c) =>
         c.chat({ model, messages, temperature })
       );
-    } catch (e: any) {
-      setError(String(e?.message ?? e));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e ?? "Unknown error"));
       return "";
     } finally {
       setLoading(false);
@@ -60,8 +61,8 @@ export function useAI(defaultModel?: string) {
       return await withFallback((c) =>
         c.generate({ model, prompt, temperature })
       );
-    } catch (e: any) {
-      setError(String(e?.message ?? e));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e ?? "Unknown error"));
       return "";
     } finally {
       setLoading(false);
@@ -82,15 +83,14 @@ export function useAI(defaultModel?: string) {
       await withFallback((c) =>
         c.streamGenerate(prompt, handlers, { model, temperature })
       );
-    } catch (e: any) {
-      setError(String(e?.message ?? e));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e ?? "Unknown error"));
     } finally {
       setLoading(false);
     }
   }
 
   return {
-    // API
     chat,
     generate,
     streamGenerate,

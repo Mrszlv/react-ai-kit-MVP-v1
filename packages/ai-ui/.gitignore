@@ -1,0 +1,29 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs (залишаємо dist!)
+!.gitignore
+!.npmignore
+!.prettierrc
+!.eslintrc
+!.husky/
+
+# TypeScript
+*.tsbuildinfo
+
+# Local env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Не ігноруємо dist — він потрібен у репозиторії
+# dist/

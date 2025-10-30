@@ -28,6 +28,11 @@ const App: React.FC = () => {
         {activeTab === "summarizer" && <SummarizerDemo />}
       </main>
 
+      <p className="block sm:hidden text-center text-sm text-slate-900 dark:text-slate-400 mb-4">
+        React library of AI-powered UI components — Chat, Translator, Rewriter,
+        Summarizer
+      </p>
+
       <Footer />
     </div>
   );
