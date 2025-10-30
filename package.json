@@ -12,6 +12,7 @@
     "changeset": "changeset",
     "version-pack": "changeset version",
     "lint": "eslint .",
+    "test": "echo \"no tests\"",
     "preview": "vite preview",
     "prepare": "husky"
   },
