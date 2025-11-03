@@ -14,8 +14,87 @@ function useAIContext() {
   return ctx;
 }
 
-// src/lib/ai/AIProvider.tsx
-import { useMemo, useState } from "react";
+// src/lib/ai/useAI.ts
+import { useState } from "react";
+function useAI(defaultModel) {
+  const {
+    client,
+    fallback,
+    defaultModel: ctxModel,
+    provider,
+    setProvider
+  } = useAIContext();
+  const model = defaultModel ?? ctxModel;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  async function withFallback(fn) {
+    try {
+      return await fn(client);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e ?? "Unknown error");
+      if (fallback && provider === "openai") {
+        const shouldFallback = /429|401|5\d\d|rate|quota|network|fetch/i.test(
+          message
+        );
+        if (shouldFallback) {
+          setProvider("groq");
+          setError("falling back to groq ai provider");
+          return await fn(fallback);
+        }
+      }
+      throw e instanceof Error ? e : new Error(String(e));
+    }
+  }
+  async function chat(messages, temperature = 0.7) {
+    setLoading(true);
+    setError(null);
+    try {
+      return await withFallback(
+        (c) => c.chat({ model, messages, temperature })
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e ?? "Unknown error"));
+      return "";
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function generate(prompt, temperature = 0.7) {
+    setLoading(true);
+    setError(null);
+    try {
+      return await withFallback(
+        (c) => c.generate({ model, prompt, temperature })
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e ?? "Unknown error"));
+      return "";
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function streamGenerate(prompt, handlers, temperature = 0.7) {
+    setLoading(true);
+    setError(null);
+    try {
+      await withFallback(
+        (c) => c.streamGenerate(prompt, handlers, { model, temperature })
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e ?? "Unknown error"));
+    } finally {
+      setLoading(false);
+    }
+  }
+  return {
+    chat,
+    generate,
+    streamGenerate,
+    loading,
+    error,
+    provider
+  };
+}
 
 // src/lib/ai/utils/sse.ts
 async function readOpenAISSE(res, onDelta) {
@@ -174,128 +253,17 @@ var GroqClient = class {
   }
 };
 
-// src/lib/ai/AIProvider.tsx
-import { jsx } from "react/jsx-runtime";
-var AIProvider = ({ children }) => {
-  const [provider, setProvider] = useState("openai");
-  const openaiKey = import.meta.env.VITE_OPENAI_KEY;
-  const groqKey = import.meta.env.VITE_GROQ_KEY;
-  const value = useMemo(() => {
-    const openai = openaiKey ? new OpenAIClient(openaiKey) : null;
-    const groq = groqKey ? new GroqClient(groqKey) : null;
-    const active = provider === "groq" ? groq ?? openai : openai ?? groq;
-    const backup = provider === "groq" ? openai ?? void 0 : groq ?? void 0;
-    const defaultModel = provider === "groq" ? "llama-3.1-8b-instant" : "gpt-4o-mini";
-    if (!active) {
-      throw new Error(
-        "No AI client configured. Provide VITE_OPENAI_KEY or VITE_GROQ_KEY."
-      );
-    }
-    return {
-      client: active,
-      fallback: backup,
-      defaultModel,
-      provider,
-      setProvider
-    };
-  }, [provider, openaiKey, groqKey]);
-  return /* @__PURE__ */ jsx(AIContext.Provider, { value, children });
-};
-var AIProvider_default = AIProvider;
-
-// src/lib/ai/useAI.ts
-import { useState as useState2 } from "react";
-function useAI(defaultModel) {
-  const {
-    client,
-    fallback,
-    defaultModel: ctxModel,
-    provider,
-    setProvider
-  } = useAIContext();
-  const model = defaultModel ?? ctxModel;
-  const [loading, setLoading] = useState2(false);
-  const [error, setError] = useState2(null);
-  async function withFallback(fn) {
-    try {
-      return await fn(client);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e ?? "Unknown error");
-      if (fallback && provider === "openai") {
-        const shouldFallback = /429|401|5\d\d|rate|quota|network|fetch/i.test(
-          message
-        );
-        if (shouldFallback) {
-          setProvider("groq");
-          setError("falling back to groq ai provider");
-          return await fn(fallback);
-        }
-      }
-      throw e instanceof Error ? e : new Error(String(e));
-    }
-  }
-  async function chat(messages, temperature = 0.7) {
-    setLoading(true);
-    setError(null);
-    try {
-      return await withFallback(
-        (c) => c.chat({ model, messages, temperature })
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e ?? "Unknown error"));
-      return "";
-    } finally {
-      setLoading(false);
-    }
-  }
-  async function generate(prompt, temperature = 0.7) {
-    setLoading(true);
-    setError(null);
-    try {
-      return await withFallback(
-        (c) => c.generate({ model, prompt, temperature })
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e ?? "Unknown error"));
-      return "";
-    } finally {
-      setLoading(false);
-    }
-  }
-  async function streamGenerate(prompt, handlers, temperature = 0.7) {
-    setLoading(true);
-    setError(null);
-    try {
-      await withFallback(
-        (c) => c.streamGenerate(prompt, handlers, { model, temperature })
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e ?? "Unknown error"));
-    } finally {
-      setLoading(false);
-    }
-  }
-  return {
-    chat,
-    generate,
-    streamGenerate,
-    loading,
-    error,
-    provider
-  };
-}
-
 // src/components/ui/Button.tsx
 import "react";
 import clsx from "clsx";
-import { jsx as jsx2 } from "react/jsx-runtime";
+import { jsx } from "react/jsx-runtime";
 var Button = ({
   className,
   disabled,
   onClick,
   type = "button",
   children
-}) => /* @__PURE__ */ jsx2(
+}) => /* @__PURE__ */ jsx(
   "button",
   {
     type,
@@ -315,9 +283,9 @@ var Button = ({
 // src/components/ui/Card.tsx
 import "react";
 import clsx2 from "clsx";
-import { jsx as jsx3 } from "react/jsx-runtime";
+import { jsx as jsx2 } from "react/jsx-runtime";
 var Card = ({ children, className = "" }) => {
-  return /* @__PURE__ */ jsx3(
+  return /* @__PURE__ */ jsx2(
     "div",
     {
       className: clsx2(
@@ -331,15 +299,15 @@ var Card = ({ children, className = "" }) => {
 };
 
 // src/components/ChatBox/ChatBox.tsx
-import { useMemo as useMemo2, useRef, useState as useState3 } from "react";
+import { useMemo, useRef, useState as useState2 } from "react";
 import clsx3 from "clsx";
-import { jsx as jsx4, jsxs } from "react/jsx-runtime";
+import { jsx as jsx3, jsxs } from "react/jsx-runtime";
 var ChatBox = () => {
   const { chat, loading, error, provider } = useAI();
-  const [messages, setMessages] = useState3([]);
-  const [input, setInput] = useState3("");
+  const [messages, setMessages] = useState2([]);
+  const [input, setInput] = useState2("");
   const endRef = useRef(null);
-  const system = useMemo2(
+  const system = useMemo(
     () => ({ role: "system", content: "You are a helpful assistant." }),
     []
   );
@@ -353,7 +321,7 @@ var ChatBox = () => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }
   return /* @__PURE__ */ jsxs(Card, { className: "space-y-4", children: [
-    /* @__PURE__ */ jsx4("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx4("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4AC} ChatBox" }) }),
+    /* @__PURE__ */ jsx3("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx3("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4AC} ChatBox" }) }),
     /* @__PURE__ */ jsxs(
       "div",
       {
@@ -363,15 +331,15 @@ var ChatBox = () => {
           "dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         ),
         children: [
-          messages.length === 0 && /* @__PURE__ */ jsx4("div", { className: "text-slate-500 dark:text-slate-400", children: "Start the conversation" }),
-          messages.map((m, i) => /* @__PURE__ */ jsx4(
+          messages.length === 0 && /* @__PURE__ */ jsx3("div", { className: "text-slate-500 dark:text-slate-400", children: "Start the conversation" }),
+          messages.map((m, i) => /* @__PURE__ */ jsx3(
             "div",
             {
               className: clsx3(
                 "mb-2 flex",
                 m.role === "user" ? "justify-end" : "justify-start"
               ),
-              children: /* @__PURE__ */ jsx4(
+              children: /* @__PURE__ */ jsx3(
                 "div",
                 {
                   className: clsx3(
@@ -384,12 +352,12 @@ var ChatBox = () => {
             },
             i
           )),
-          /* @__PURE__ */ jsx4("div", { ref: endRef })
+          /* @__PURE__ */ jsx3("div", { ref: endRef })
         ]
       }
     ),
     /* @__PURE__ */ jsxs("div", { className: "flex w-full gap-2", children: [
-      /* @__PURE__ */ jsx4(
+      /* @__PURE__ */ jsx3(
         "input",
         {
           "aria-label": "Type a message",
@@ -410,27 +378,27 @@ var ChatBox = () => {
           placeholder: "Type a message..."
         }
       ),
-      /* @__PURE__ */ jsx4(Button, { disabled: loading || input.trim().length === 0, onClick: send, children: loading ? "\u2026" : "Send" })
+      /* @__PURE__ */ jsx3(Button, { disabled: loading || input.trim().length === 0, onClick: send, children: loading ? "\u2026" : "Send" })
     ] }),
     /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
       provider && /* @__PURE__ */ jsxs("span", { className: "rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300", children: [
         "via ",
         provider
       ] }),
-      error && /* @__PURE__ */ jsx4("p", { className: "text-xs text-slate-400", children: error })
+      error && /* @__PURE__ */ jsx3("p", { className: "text-xs text-slate-400", children: error })
     ] })
   ] });
 };
 
 // src/components/Summarizer/Summarizer.tsx
-import { useState as useState4 } from "react";
-import { jsx as jsx5, jsxs as jsxs2 } from "react/jsx-runtime";
+import { useState as useState3 } from "react";
+import { jsx as jsx4, jsxs as jsxs2 } from "react/jsx-runtime";
 var Summarizer = () => {
   const { streamGenerate, loading, error, provider } = useAI();
-  const [src, setSrc] = useState4("");
-  const [out, setOut] = useState4("");
-  const [style, setStyle] = useState4("Bulleted");
-  const [lang, setLang] = useState4("English");
+  const [src, setSrc] = useState3("");
+  const [out, setOut] = useState3("");
+  const [style, setStyle] = useState3("Bulleted");
+  const [lang, setLang] = useState3("English");
   function buildPrompt3(text, language, format) {
     return [
       `You are a professional text summarizer that produces ${format.toLowerCase()} summaries in ${language}.`,
@@ -455,9 +423,9 @@ var Summarizer = () => {
   }
   return /* @__PURE__ */ jsxs2(Card, { className: "space-y-4", children: [
     /* @__PURE__ */ jsxs2("div", { className: "flex flex-wrap items-center gap-2", children: [
-      /* @__PURE__ */ jsx5("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4DD} Summarizer" }),
+      /* @__PURE__ */ jsx4("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4DD} Summarizer" }),
       /* @__PURE__ */ jsxs2("div", { className: "ml-auto flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx5(
+        /* @__PURE__ */ jsx4(
           "select",
           {
             title: "selectSummizer",
@@ -475,7 +443,7 @@ var Summarizer = () => {
               "Portuguese",
               "Russian",
               "Turkish"
-            ].map((l) => /* @__PURE__ */ jsx5("option", { value: l, children: l }, l))
+            ].map((l) => /* @__PURE__ */ jsx4("option", { value: l, children: l }, l))
           }
         ),
         /* @__PURE__ */ jsxs2(
@@ -486,15 +454,15 @@ var Summarizer = () => {
             value: style,
             onChange: (e) => setStyle(e.target.value),
             children: [
-              /* @__PURE__ */ jsx5("option", { value: "Bulleted", children: "Bulleted" }),
-              /* @__PURE__ */ jsx5("option", { value: "Paragraph", children: "Paragraph" }),
-              /* @__PURE__ */ jsx5("option", { value: "Compact", children: "Compact" })
+              /* @__PURE__ */ jsx4("option", { value: "Bulleted", children: "Bulleted" }),
+              /* @__PURE__ */ jsx4("option", { value: "Paragraph", children: "Paragraph" }),
+              /* @__PURE__ */ jsx4("option", { value: "Compact", children: "Compact" })
             ]
           }
         )
       ] })
     ] }),
-    /* @__PURE__ */ jsx5(
+    /* @__PURE__ */ jsx4(
       "textarea",
       {
         className: "h-40 w-full resize-none rounded-xl border p-3 text-sm\r\n                   border-slate-300 bg-white text-slate-900 placeholder:text-slate-400\r\n                   dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500",
@@ -503,8 +471,8 @@ var Summarizer = () => {
         onChange: (e) => setSrc(e.target.value)
       }
     ),
-    /* @__PURE__ */ jsx5("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx5(Button, { disabled: loading || !src.trim(), onClick: run, children: loading ? "\u2026" : "Summarize" }) }),
-    /* @__PURE__ */ jsx5(
+    /* @__PURE__ */ jsx4("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx4(Button, { disabled: loading || !src.trim(), onClick: run, children: loading ? "\u2026" : "Summarize" }) }),
+    /* @__PURE__ */ jsx4(
       "div",
       {
         className: "min-h-16 w-full whitespace-pre-wrap rounded-xl border p-3 text-sm\r\n                      border-slate-200 bg-white/70 text-slate-900\r\n                      dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100",
@@ -516,14 +484,14 @@ var Summarizer = () => {
         "via ",
         provider
       ] }),
-      error && /* @__PURE__ */ jsx5("p", { className: "text-xs text-slate-400", children: error })
+      error && /* @__PURE__ */ jsx4("p", { className: "text-xs text-slate-400", children: error })
     ] })
   ] });
 };
 
 // src/components/Translator/Translator.tsx
-import { useState as useState5 } from "react";
-import { jsx as jsx6, jsxs as jsxs3 } from "react/jsx-runtime";
+import { useState as useState4 } from "react";
+import { jsx as jsx5, jsxs as jsxs3 } from "react/jsx-runtime";
 function buildPrompt(text, from, to) {
   return [
     `You are a precise translator from ${from} to ${to}.`,
@@ -540,10 +508,10 @@ function buildPrompt(text, from, to) {
 }
 var Translator = () => {
   const { streamGenerate, loading, error, provider } = useAI();
-  const [from, setFrom] = useState5("Ukrainian");
-  const [to, setTo] = useState5("English");
-  const [src, setSrc] = useState5("");
-  const [out, setOut] = useState5("");
+  const [from, setFrom] = useState4("Ukrainian");
+  const [to, setTo] = useState4("English");
+  const [src, setSrc] = useState4("");
+  const [out, setOut] = useState4("");
   async function run() {
     setOut("");
     const prompt = buildPrompt(src, from, to);
@@ -572,19 +540,19 @@ var Translator = () => {
   ];
   return /* @__PURE__ */ jsxs3(Card, { className: "space-y-4", children: [
     /* @__PURE__ */ jsxs3("div", { className: "flex flex-wrap items-center gap-2", children: [
-      /* @__PURE__ */ jsx6("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F310} Translator" }),
+      /* @__PURE__ */ jsx5("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F310} Translator" }),
       /* @__PURE__ */ jsxs3("div", { className: "ml-auto flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx6(
+        /* @__PURE__ */ jsx5(
           "select",
           {
             title: "selectTranslator",
             className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
             value: from,
             onChange: (e) => setFrom(e.target.value),
-            children: langs.map((l) => /* @__PURE__ */ jsx6("option", { value: l, children: l }, `f-${l}`))
+            children: langs.map((l) => /* @__PURE__ */ jsx5("option", { value: l, children: l }, `f-${l}`))
           }
         ),
-        /* @__PURE__ */ jsx6(
+        /* @__PURE__ */ jsx5(
           "button",
           {
             type: "button",
@@ -594,19 +562,19 @@ var Translator = () => {
             children: "\u21C4"
           }
         ),
-        /* @__PURE__ */ jsx6(
+        /* @__PURE__ */ jsx5(
           "select",
           {
             title: "selectTranslator",
             className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
             value: to,
             onChange: (e) => setTo(e.target.value),
-            children: langs.map((l) => /* @__PURE__ */ jsx6("option", { value: l, children: l }, `t-${l}`))
+            children: langs.map((l) => /* @__PURE__ */ jsx5("option", { value: l, children: l }, `t-${l}`))
           }
         )
       ] })
     ] }),
-    /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ jsx5(
       "textarea",
       {
         className: "h-40 w-full resize-none rounded-xl border p-3 text-sm\r\n                   border-slate-300 bg-white text-slate-900 placeholder:text-slate-400\r\n                   dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500",
@@ -615,8 +583,8 @@ var Translator = () => {
         onChange: (e) => setSrc(e.target.value)
       }
     ),
-    /* @__PURE__ */ jsx6("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx6(Button, { disabled: !src.trim() || loading, onClick: run, children: loading ? "\u2026" : "Translate" }) }),
-    /* @__PURE__ */ jsx6(
+    /* @__PURE__ */ jsx5("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx5(Button, { disabled: !src.trim() || loading, onClick: run, children: loading ? "\u2026" : "Translate" }) }),
+    /* @__PURE__ */ jsx5(
       "div",
       {
         className: "min-h-16 w-full whitespace-pre-wrap rounded-xl border p-3 text-sm\r\n                      border-slate-200 bg-white/70 text-slate-900\r\n                      dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100",
@@ -628,14 +596,14 @@ var Translator = () => {
         "via ",
         provider
       ] }),
-      error && /* @__PURE__ */ jsx6("p", { className: "text-xs text-slate-400", children: error })
+      error && /* @__PURE__ */ jsx5("p", { className: "text-xs text-slate-400", children: error })
     ] })
   ] });
 };
 
 // src/components/Rewriter/Rewriter.tsx
-import { useMemo as useMemo3, useState as useState6 } from "react";
-import { jsx as jsx7, jsxs as jsxs4 } from "react/jsx-runtime";
+import { useMemo as useMemo2, useState as useState5 } from "react";
+import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
 function buildPrompt2(text, opts) {
   const toneLine = {
     neutral: "Use a clear, neutral tone.",
@@ -676,13 +644,13 @@ function buildPrompt2(text, opts) {
 }
 var Rewriter = () => {
   const { streamGenerate, loading, error, provider } = useAI();
-  const [tone, setTone] = useState6("neutral");
-  const [length, setLength] = useState6("same");
-  const [creativity, setCreativity] = useState6("medium");
-  const [lang, setLang] = useState6("auto");
-  const [src, setSrc] = useState6("");
-  const [out, setOut] = useState6("");
-  const canRun = useMemo3(() => src.trim().length > 0, [src]);
+  const [tone, setTone] = useState5("neutral");
+  const [length, setLength] = useState5("same");
+  const [creativity, setCreativity] = useState5("medium");
+  const [lang, setLang] = useState5("auto");
+  const [src, setSrc] = useState5("");
+  const [out, setOut] = useState5("");
+  const canRun = useMemo2(() => src.trim().length > 0, [src]);
   async function run() {
     setOut("");
     const prompt = buildPrompt2(src, {
@@ -711,9 +679,9 @@ var Rewriter = () => {
   ];
   return /* @__PURE__ */ jsxs4(Card, { className: "space-y-4", children: [
     /* @__PURE__ */ jsxs4("div", { className: "flex flex-wrap items-center gap-2", children: [
-      /* @__PURE__ */ jsx7("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u270D\uFE0F Rewriter" }),
+      /* @__PURE__ */ jsx6("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u270D\uFE0F Rewriter" }),
       /* @__PURE__ */ jsxs4("div", { className: "ml-auto flex flex-wrap items-center gap-2", children: [
-        /* @__PURE__ */ jsx7(
+        /* @__PURE__ */ jsx6(
           "select",
           {
             title: "selectRewriter",
@@ -727,7 +695,7 @@ var Rewriter = () => {
               "friendly",
               "professional",
               "confident"
-            ].map((t) => /* @__PURE__ */ jsx7("option", { value: t, children: t[0].toUpperCase() + t.slice(1) }, t))
+            ].map((t) => /* @__PURE__ */ jsx6("option", { value: t, children: t[0].toUpperCase() + t.slice(1) }, t))
           }
         ),
         /* @__PURE__ */ jsxs4(
@@ -738,9 +706,9 @@ var Rewriter = () => {
             value: length,
             onChange: (e) => setLength(e.target.value),
             children: [
-              /* @__PURE__ */ jsx7("option", { value: "shorter", children: "Shorter" }),
-              /* @__PURE__ */ jsx7("option", { value: "same", children: "Same length" }),
-              /* @__PURE__ */ jsx7("option", { value: "longer", children: "Longer" })
+              /* @__PURE__ */ jsx6("option", { value: "shorter", children: "Shorter" }),
+              /* @__PURE__ */ jsx6("option", { value: "same", children: "Same length" }),
+              /* @__PURE__ */ jsx6("option", { value: "longer", children: "Longer" })
             ]
           }
         ),
@@ -752,25 +720,25 @@ var Rewriter = () => {
             value: creativity,
             onChange: (e) => setCreativity(e.target.value),
             children: [
-              /* @__PURE__ */ jsx7("option", { value: "low", children: "Creativity: Low" }),
-              /* @__PURE__ */ jsx7("option", { value: "medium", children: "Creativity: Medium" }),
-              /* @__PURE__ */ jsx7("option", { value: "high", children: "Creativity: High" })
+              /* @__PURE__ */ jsx6("option", { value: "low", children: "Creativity: Low" }),
+              /* @__PURE__ */ jsx6("option", { value: "medium", children: "Creativity: Medium" }),
+              /* @__PURE__ */ jsx6("option", { value: "high", children: "Creativity: High" })
             ]
           }
         ),
-        /* @__PURE__ */ jsx7(
+        /* @__PURE__ */ jsx6(
           "select",
           {
             title: "selectRewriter",
             className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
             value: lang,
             onChange: (e) => setLang(e.target.value),
-            children: langs.map((l) => /* @__PURE__ */ jsx7("option", { value: l, children: l }, l))
+            children: langs.map((l) => /* @__PURE__ */ jsx6("option", { value: l, children: l }, l))
           }
         )
       ] })
     ] }),
-    /* @__PURE__ */ jsx7(
+    /* @__PURE__ */ jsx6(
       "textarea",
       {
         className: "h-44 w-full resize-none rounded-xl border p-3 text-sm\r\n                   border-slate-300 bg-white text-slate-900 placeholder:text-slate-400\r\n                   dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500",
@@ -779,8 +747,8 @@ var Rewriter = () => {
         onChange: (e) => setSrc(e.target.value)
       }
     ),
-    /* @__PURE__ */ jsx7("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx7(Button, { disabled: !canRun || loading, onClick: run, children: loading ? "\u2026" : "Rewrite" }) }),
-    /* @__PURE__ */ jsx7(
+    /* @__PURE__ */ jsx6("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx6(Button, { disabled: !canRun || loading, onClick: run, children: loading ? "\u2026" : "Rewrite" }) }),
+    /* @__PURE__ */ jsx6(
       "div",
       {
         className: "min-h-16 w-full whitespace-pre-wrap rounded-xl border p-3 text-sm\r\n                      border-slate-200 bg-white/70 text-slate-900\r\n                      dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100",
@@ -792,16 +760,54 @@ var Rewriter = () => {
         "via ",
         provider
       ] }),
-      error && /* @__PURE__ */ jsx7("p", { className: "text-xs text-slate-400", children: error })
+      error && /* @__PURE__ */ jsx6("p", { className: "text-xs text-slate-400", children: error })
     ] })
   ] });
 };
 
+// src/lib/ai/AIProvider.tsx
+import { useMemo as useMemo3, useState as useState6 } from "react";
+import { jsx as jsx7 } from "react/jsx-runtime";
+var AIProvider = ({ children }) => {
+  const [provider, setProvider] = useState6("openai");
+  const openaiKey = import.meta.env.VITE_OPENAI_KEY;
+  const groqKey = import.meta.env.VITE_GROQ_KEY;
+  const value = useMemo3(() => {
+    const openai = openaiKey ? new OpenAIClient(openaiKey) : null;
+    const groq = groqKey ? new GroqClient(groqKey) : null;
+    const active = provider === "groq" ? groq ?? openai : openai ?? groq;
+    const backup = provider === "groq" ? openai ?? void 0 : groq ?? void 0;
+    const defaultModel = provider === "groq" ? "llama-3.1-8b-instant" : "gpt-4o-mini";
+    if (!active) {
+      throw new Error(
+        "No AI client configured. Provide VITE_OPENAI_KEY or VITE_GROQ_KEY."
+      );
+    }
+    return {
+      client: active,
+      fallback: backup,
+      defaultModel,
+      provider,
+      setProvider
+    };
+  }, [provider, openaiKey, groqKey]);
+  return /* @__PURE__ */ jsx7(AIContext.Provider, { value, children });
+};
+var AIProvider_default = AIProvider;
+
 // src/index.ts
-var AIUI = { ChatBox, Summarizer, Translator, Rewriter, AIProvider: AIProvider_default, useAI };
+var AIUI = {
+  ChatBox,
+  Summarizer,
+  Translator,
+  Rewriter,
+  AIProvider: AIProvider_default,
+  useAI
+};
 var index_default = AIUI;
 export {
   AIContext,
+  AIProvider_default as AIProvider,
   AIProviderBase,
   Button,
   Card,

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import React__default from 'react';
+import React__default, { PropsWithChildren } from 'react';
 
 type Role = "system" | "user" | "assistant";
 type AIMessage = {
@@ -129,6 +129,8 @@ declare const Translator: React__default.FC;
 
 declare const Rewriter: React__default.FC;
 
+declare const AIProvider: React__default.FC<PropsWithChildren>;
+
 declare const AIUI: {
     ChatBox: React.FC<{}>;
     Summarizer: React.FC<{}>;
@@ -140,4 +142,4 @@ declare const AIUI: {
     useAI: typeof useAI;
 };
 
-export { type AIClient, AIContext, type AIContextType, type AIMessage, AIProviderBase, Button, Card, ChatBox, GroqClient, OpenAIClient, type ProviderName, Rewriter, type Role, type StreamHandlers, Summarizer, Translator, AIUI as default, readOpenAISSE, useAI, useAIContext };
+export { type AIClient, AIContext, type AIContextType, type AIMessage, AIProvider, AIProviderBase, Button, Card, ChatBox, GroqClient, OpenAIClient, type ProviderName, Rewriter, type Role, type StreamHandlers, Summarizer, Translator, AIUI as default, readOpenAISSE, useAI, useAIContext };
