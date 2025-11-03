@@ -28,44 +28,18 @@ npm install @mrszlv/ai-ui-components
 
 ### Option 1 — Named imports (recommended)
 
-```tsx
-import {
-  AIProvider,
-  ChatBox,
-  Translator,
-  Summarizer,
-  Rewriter,
-} from "@mrszlv/ai-ui-components";
+import { AIProvider, ChatBox, Translator, Summarizer, Rewriter } from "@mrszlv/ai-ui-components";
 import "@mrszlv/ai-ui-components/dist/index.css";
 
 function App() {
-  return (
-    <AIProvider>
-      <main>
-        <ChatBox />
-        <Summarizer />
-        <Translator />
-        <Rewriter />
-      </main>
-    </AIProvider>
-  );
-}
-
-export default App;
-```
-
-import AIUI from "@mrszlv/ai-ui-components";
-import "@mrszlv/ai-ui-components/dist/index.css";
-
-function App() {
-const { ChatBox, Translator, Summarizer, Rewriter, AIProvider } = AIUI;
-
 return (
 `<AIProvider>`
+`<main>`
 `<ChatBox />`
 `<Summarizer />`
 `<Translator />`
 `<Rewriter />`
+`</main>`
 `</AIProvider>`
 );
 }
