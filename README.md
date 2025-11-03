@@ -28,57 +28,65 @@ npm install @mrszlv/ai-ui-components
 
 ### Option 1 — Named imports (recommended)
 
-<pre class="overflow-visible!" data-start="1358" data-end="1722"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-tsx"><span><span>import</span><span> { </span><span>AIProvider</span><span>, </span><span>ChatBox</span><span>, </span><span>Translator</span><span>, </span><span>Summarizer</span><span>, </span><span>Rewriter</span><span> } </span><span>from</span><span></span><span>"@mrszlv/ai-ui-components"</span><span>;
-</span><span>import</span><span></span><span>"@mrszlv/ai-ui-components/dist/index.css"</span><span>;
+```tsx
+import {
+  AIProvider,
+  ChatBox,
+  Translator,
+  Summarizer,
+  Rewriter,
+} from "@mrszlv/ai-ui-components";
+import "@mrszlv/ai-ui-components/dist/index.css";
 
-</span><span>function</span><span></span><span>App</span><span>(</span><span></span><span>) {
-  </span><span>return</span><span> (
-    </span><span><span class="language-xml"><AIProvider</span></span><span>>
-      </span><span><main</span><span>>
-        </span><span><ChatBox</span><span> />
-        </span><span><Summarizer</span><span> />
-        </span><span><Translator</span><span> />
-        </span><span><Rewriter</span><span> />
-      </span><span></main</span><span>>
-    </span><span></AIProvider</span><span>>
+function App() {
+  return (
+    <AIProvider>
+      <main>
+        <ChatBox />
+        <Summarizer />
+        <Translator />
+        <Rewriter />
+      </main>
+    </AIProvider>
   );
 }
 
-</span><span>export</span><span></span><span>default</span><span></span><span>App</span><span>;</span></span></code></div></div></pre>
+export default App;
+```
 
-### Option 2 — Default object import
+import AIUI from "@mrszlv/ai-ui-components";
+import "@mrszlv/ai-ui-components/dist/index.css";
 
-`<pre class="overflow-visible!" data-start="1761" data-end="2091"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary">``<div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2">``<div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"></div>``</div></div>``<div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-tsx">``<span><span>`import `<span><span>`AIUI `<span><span>`from `<span><span>`"@mrszlv/ai-ui-components"`<span>`;
-`<span>`import `<span><span>`"@mrszlv/ai-ui-components/dist/index.css"`<span>`;
+function App() {
+const { ChatBox, Translator, Summarizer, Rewriter, AIProvider } = AIUI;
 
-`<span>`function `<span><span>`App `<span>`(`<span><span>`) {
-`<span>`const `<span>` { `<span>`ChatBox `<span>`, `<span>`Summarizer `<span>`, `<span>`Translator `<span>`, `<span>`Rewriter `<span>`, `<span>`AIProvider `<span>` } = `<span>`AIUI `<span>`;
-
-`<span>`return `<span>` (
-`<span><span class="language-xml">`<AIProvider `<span>`>
-`<span>`<ChatBox `<span>` />
-`<span>`<Summarizer `<span>` />
-`<span>`<Translator `<span>` />
-`<span>`<Rewriter `<span>` />
-`<span>`</AIProvider `<span>`>
+return (
+`<AIProvider>`
+`<ChatBox />`
+`<Summarizer />`
+`<Translator />`
+`<Rewriter />`
+`</AIProvider>`
 );
-}`</code></div>``</div></pre>`
+}
+
+export default App;
 
 ## 🧩 Components
 
-| Component           | Description                                   |
-| ------------------- | --------------------------------------------- |
-| `ChatBox`         | Full AI chat interface with message streaming |
-| `Summarizer`      | Summarizes long articles or paragraphs        |
-| `Translator`      | Translates between any languages              |
-| `Rewriter`        | Rephrases text while preserving meaning       |
+| Component       | Description                                   |
+| --------------- | --------------------------------------------- |
+| `ChatBox`       | Full AI chat interface with message streaming |
+| `Summarizer`    | Summarizes long articles or paragraphs        |
+| `Translator`    | Translates between any languages              |
+| `Rewriter`      | Rephrases text while preserving meaning       |
 | `Button`,`Card` | Utility UI elements for layout and actions    |
 
 ## 🧠 Hook: `useAI(model?: string)`
 
 Provides direct programmatic access to AI features.
 
-`<pre class="overflow-visible!" data-start="2565" data-end="2948"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary">``<div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2">``<div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"></div>``</div></div>``<div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-tsx">``<span><span>`import `<span>` { useAI } `<span>`from `<span><span>`"@mrszlv/ai-ui-components"`<span>`;
+` <pre class="overflow-visible!" data-start="2565" data-end="2948"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary">``<div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2">``<div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"></div>``</div></div>``<div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-tsx">``<span><span> `import `<span>` { useAI } `<span>`from `<span><span>`"@mrszlv/ai-ui-components"`<span>`;
 
 `<span>`function `<span><span>`Generator `<span>`(`<span><span>`) {
 `<span>`const `<span>` { generate, chat, loading, error } = `<span>`useAI `<span>`(`<span>`"gpt-4o-mini"`<span>`);
@@ -93,7 +101,7 @@ Provides direct programmatic access to AI features.
 Generate
 `<span>`</button `<span>`>
 );
-}`</code></div>``</div></pre>`
+}` </code></div>``</div></pre> `
 
 ## 🌐 Environment Variables
 
@@ -107,7 +115,7 @@ The `AIProvider` automatically switches between **OpenAI** and **Groq** dependin
 
 ## 🧱 Package Structure
 
-`<pre class="overflow-visible!" data-start="3275" data-end="3626"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary">``<div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2">``<div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"></div>``</div></div>``<div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash">``<span><span>`packages/ai-ui/
+` <pre class="overflow-visible!" data-start="3275" data-end="3626"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary">``<div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2">``<div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"></div>``</div></div>``<div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash">``<span><span> `packages/ai-ui/
 ├─ src/
 │ ├─ components/
 │ │ ├─ ChatBox/
@@ -123,7 +131,7 @@ The `AIProvider` automatically switches between **OpenAI** and **Groq** dependin
 │ │ │ └─ clients/
 │ ├─ index.ts
 │ └─ tailwind.css
-└─ dist/`</code></div>``</div></pre>`
+└─ dist/` </code></div>``</div></pre> `
 
 ## ⚡ Build & Development
 
@@ -181,8 +189,8 @@ If your project already uses Tailwind, simply include the package’s CSS:
 
 ## 📘 API Reference
 
-| Function                                           | Description                     |
-| -------------------------------------------------- | ------------------------------- |
+| Function                                         | Description                     |
+| ------------------------------------------------ | ------------------------------- |
 | `generate(prompt, temperature?)`                 | Returns AI-generated text       |
 | `chat(messages, temperature?)`                   | Runs conversational context     |
 | `streamGenerate(prompt, handlers, temperature?)` | Streams output token-by-token   |
@@ -231,7 +239,6 @@ please open an issue on [GitHub Issues](https://github.com/mrszlv/react-ai-kit-M
 - 🧠 Custom model switching via UI
 - 💬 Conversation memory & message history
 - 🌐 Multi-language interface support
-
 
 Built with ❤️ by **[Miroslav Popovich](https://github.com/mrszlv)**
 
