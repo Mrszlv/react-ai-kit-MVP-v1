@@ -43,11 +43,11 @@ export const Summarizer: React.FC = () => {
   return (
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="mr-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
           📝 Summarizer
         </h3>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <select
             title="selectSummizer"
             className="rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700"

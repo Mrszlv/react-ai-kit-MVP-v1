@@ -321,7 +321,7 @@ var ChatBox = () => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }
   return /* @__PURE__ */ jsxs(Card, { className: "space-y-4", children: [
-    /* @__PURE__ */ jsx3("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx3("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4AC} ChatBox" }) }),
+    /* @__PURE__ */ jsx3("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx3("h3", { className: "mr-1 text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4AC} ChatBox" }) }),
     /* @__PURE__ */ jsxs(
       "div",
       {
@@ -423,8 +423,8 @@ var Summarizer = () => {
   }
   return /* @__PURE__ */ jsxs2(Card, { className: "space-y-4", children: [
     /* @__PURE__ */ jsxs2("div", { className: "flex flex-wrap items-center gap-2", children: [
-      /* @__PURE__ */ jsx4("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4DD} Summarizer" }),
-      /* @__PURE__ */ jsxs2("div", { className: "ml-auto flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx4("h3", { className: "mr-1 text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4DD} Summarizer" }),
+      /* @__PURE__ */ jsxs2("div", { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx4(
           "select",
           {
@@ -540,8 +540,8 @@ var Translator = () => {
   ];
   return /* @__PURE__ */ jsxs3(Card, { className: "space-y-4", children: [
     /* @__PURE__ */ jsxs3("div", { className: "flex flex-wrap items-center gap-2", children: [
-      /* @__PURE__ */ jsx5("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F310} Translator" }),
-      /* @__PURE__ */ jsxs3("div", { className: "ml-auto flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx5("h3", { className: "mr-1 text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F310} Translator" }),
+      /* @__PURE__ */ jsxs3("div", { className: "flex items-center gap-2", children: [
         /* @__PURE__ */ jsx5(
           "select",
           {
@@ -679,8 +679,8 @@ var Rewriter = () => {
   ];
   return /* @__PURE__ */ jsxs4(Card, { className: "space-y-4", children: [
     /* @__PURE__ */ jsxs4("div", { className: "flex flex-wrap items-center gap-2", children: [
-      /* @__PURE__ */ jsx6("h3", { className: "text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u270D\uFE0F Rewriter" }),
-      /* @__PURE__ */ jsxs4("div", { className: "ml-auto flex flex-wrap items-center gap-2", children: [
+      /* @__PURE__ */ jsx6("h3", { className: "mr-1 text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u270D\uFE0F Rewriter" }),
+      /* @__PURE__ */ jsxs4("div", { className: "flex flex-wrap items-center gap-2", children: [
         /* @__PURE__ */ jsx6(
           "select",
           {
