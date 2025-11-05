@@ -255,7 +255,24 @@ var GroqClient = class {
 
 // src/components/ui/Button.tsx
 import "react";
-import clsx from "clsx";
+
+// ../../node_modules/clsx/dist/clsx.mjs
+function r(e) {
+  var t, f, n = "";
+  if ("string" == typeof e || "number" == typeof e) n += e;
+  else if ("object" == typeof e) if (Array.isArray(e)) {
+    var o = e.length;
+    for (t = 0; t < o; t++) e[t] && (f = r(e[t])) && (n && (n += " "), n += f);
+  } else for (f in e) e[f] && (n && (n += " "), n += f);
+  return n;
+}
+function clsx() {
+  for (var e, t, f = 0, n = "", o = arguments.length; f < o; f++) (e = arguments[f]) && (t = r(e)) && (n && (n += " "), n += t);
+  return n;
+}
+var clsx_default = clsx;
+
+// src/components/ui/Button.tsx
 import { jsx } from "react/jsx-runtime";
 var Button = ({
   className,
@@ -269,7 +286,7 @@ var Button = ({
     type,
     onClick,
     disabled,
-    className: clsx(
+    className: clsx_default(
       "rounded-xl px-4 py-2 text-sm font-medium transition-colors cursor-pointer",
       "bg-indigo-500 text-white hover:bg-indigo-600",
       "dark:bg-indigo-400 dark:hover:bg-indigo-500",
@@ -282,13 +299,12 @@ var Button = ({
 
 // src/components/ui/Card.tsx
 import "react";
-import clsx2 from "clsx";
 import { jsx as jsx2 } from "react/jsx-runtime";
 var Card = ({ children, className = "" }) => {
   return /* @__PURE__ */ jsx2(
     "div",
     {
-      className: clsx2(
+      className: clsx_default(
         "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm",
         "dark:border-slate-700 dark:bg-slate-900",
         className
@@ -300,7 +316,6 @@ var Card = ({ children, className = "" }) => {
 
 // src/components/ChatBox/ChatBox.tsx
 import { useMemo, useRef, useState as useState2 } from "react";
-import clsx3 from "clsx";
 import { jsx as jsx3, jsxs } from "react/jsx-runtime";
 var ChatBox = () => {
   const { chat, loading, error, provider } = useAI();
@@ -325,7 +340,7 @@ var ChatBox = () => {
     /* @__PURE__ */ jsxs(
       "div",
       {
-        className: clsx3(
+        className: clsx_default(
           "w-full min-h-40 max-h-112 overflow-auto rounded-xl border p-3 text-sm",
           "border-slate-200 bg-slate-50",
           "dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
@@ -335,14 +350,14 @@ var ChatBox = () => {
           messages.map((m, i) => /* @__PURE__ */ jsx3(
             "div",
             {
-              className: clsx3(
+              className: clsx_default(
                 "mb-2 flex",
                 m.role === "user" ? "justify-end" : "justify-start"
               ),
               children: /* @__PURE__ */ jsx3(
                 "div",
                 {
-                  className: clsx3(
+                  className: clsx_default(
                     "max-w-[80%] rounded-2xl px-3 py-2 shadow-sm whitespace-pre-wrap wrap-break-wordbreak-words",
                     m.role === "user" ? "bg-indigo-600 text-white dark:bg-indigo-500" : "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700"
                   ),
@@ -361,7 +376,7 @@ var ChatBox = () => {
         "input",
         {
           "aria-label": "Type a message",
-          className: clsx3(
+          className: clsx_default(
             "flex-1 rounded-xl border px-3 py-2 text-sm outline-none",
             "placeholder:text-slate-400",
             "border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 text-slate-900",
@@ -769,18 +784,22 @@ var Rewriter = () => {
 import { useMemo as useMemo3, useState as useState6 } from "react";
 import { jsx as jsx7 } from "react/jsx-runtime";
 var AIProvider = ({ children }) => {
-  const [provider, setProvider] = useState6("openai");
+  const [provider, setProvider] = useState6(
+    import.meta.env.VITE_AI_PROVIDER ?? "openai"
+  );
   const openaiKey = import.meta.env.VITE_OPENAI_KEY;
   const groqKey = import.meta.env.VITE_GROQ_KEY;
+  const openaiModel = import.meta.env.VITE_OPENAI_MODEL ?? "gpt-4o-mini";
+  const groqModel = import.meta.env.VITE_GROQ_MODEL ?? "llama-3.1-8b-instant";
   const value = useMemo3(() => {
     const openai = openaiKey ? new OpenAIClient(openaiKey) : null;
     const groq = groqKey ? new GroqClient(groqKey) : null;
     const active = provider === "groq" ? groq ?? openai : openai ?? groq;
     const backup = provider === "groq" ? openai ?? void 0 : groq ?? void 0;
-    const defaultModel = provider === "groq" ? "llama-3.1-8b-instant" : "gpt-4o-mini";
+    const defaultModel = provider === "groq" ? groqModel : openaiModel;
     if (!active) {
       throw new Error(
-        "No AI client configured. Provide VITE_OPENAI_KEY or VITE_GROQ_KEY."
+        "No AI client configured. Provide VITE_OPENAI_KEY or VITE_GROQ_KEY in your environment."
       );
     }
     return {
@@ -790,7 +809,7 @@ var AIProvider = ({ children }) => {
       provider,
       setProvider
     };
-  }, [provider, openaiKey, groqKey]);
+  }, [provider, openaiKey, groqKey, openaiModel, groqModel]);
   return /* @__PURE__ */ jsx7(AIContext.Provider, { value, children });
 };
 var AIProvider_default = AIProvider;

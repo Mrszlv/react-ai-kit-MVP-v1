@@ -1,5 +1,5 @@
 export * from "./ChatDemo/ChatDemo";
-export * from "./SummizerDemo/SummarizerDemo";
+export * from "./SummarizerDemo/SummarizerDemo";
 export * from "./TranslatorDemo/TranslatorDemo";
 export * from "./RewriterDemo/RewriterDemo";
 export * from "./Header/Header";
