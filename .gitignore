@@ -51,3 +51,6 @@ __tests__/temp/
 tsup/
 vite/
 .storybook-static/
+
+# npm pack artifacts
+*.tgz
