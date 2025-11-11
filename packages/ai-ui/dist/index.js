@@ -783,23 +783,47 @@ var Rewriter = () => {
 // src/lib/ai/AIProvider.tsx
 import { useMemo as useMemo3, useState as useState6 } from "react";
 import { jsx as jsx7 } from "react/jsx-runtime";
-var AIProvider = ({ children }) => {
+var DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+var DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant";
+function fromVite(name) {
+  const env = import.meta.env;
+  return env ? env[name] : void 0;
+}
+function fromNode(name) {
+  const env = typeof process !== "undefined" ? process.env : void 0;
+  return env ? env[name] : void 0;
+}
+function fromGlobal(name) {
+  const env = globalThis.__AIUI_ENV;
+  return env ? env[name] : void 0;
+}
+function readEnv(name) {
+  return fromVite(name) ?? fromNode(name) ?? fromGlobal(name);
+}
+var AIProvider = ({
+  children,
+  openaiKey,
+  openaiModel,
+  groqKey,
+  groqModel,
+  initialProvider
+}) => {
   const [provider, setProvider] = useState6(
-    import.meta.env.VITE_AI_PROVIDER ?? "openai"
+    initialProvider ?? readEnv("VITE_AI_PROVIDER") ?? "openai"
   );
-  const openaiKey = import.meta.env.VITE_OPENAI_KEY;
-  const groqKey = import.meta.env.VITE_GROQ_KEY;
-  const openaiModel = import.meta.env.VITE_OPENAI_MODEL ?? "gpt-4o-mini";
-  const groqModel = import.meta.env.VITE_GROQ_MODEL ?? "llama-3.1-8b-instant";
+  const resolvedOpenAIKey = openaiKey ?? readEnv("VITE_OPENAI_KEY");
+  const resolvedGroqKey = groqKey ?? readEnv("VITE_GROQ_KEY");
+  const resolvedOpenAIModel = openaiModel ?? readEnv("VITE_OPENAI_MODEL") ?? DEFAULT_OPENAI_MODEL;
+  const resolvedGroqModel = groqModel ?? readEnv("VITE_GROQ_MODEL") ?? DEFAULT_GROQ_MODEL;
   const value = useMemo3(() => {
-    const openai = openaiKey ? new OpenAIClient(openaiKey) : null;
-    const groq = groqKey ? new GroqClient(groqKey) : null;
+    const openai = resolvedOpenAIKey ? new OpenAIClient(resolvedOpenAIKey) : null;
+    const groq = resolvedGroqKey ? new GroqClient(resolvedGroqKey) : null;
     const active = provider === "groq" ? groq ?? openai : openai ?? groq;
     const backup = provider === "groq" ? openai ?? void 0 : groq ?? void 0;
-    const defaultModel = provider === "groq" ? groqModel : openaiModel;
+    const defaultModel = provider === "groq" ? resolvedGroqModel : resolvedOpenAIModel;
     if (!active) {
       throw new Error(
-        "No AI client configured. Provide VITE_OPENAI_KEY or VITE_GROQ_KEY in your environment."
+        "No AI client configured. Pass keys via props (openaiKey/groqKey) \u0430\u0431\u043E \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0438 VITE_OPENAI_KEY / VITE_GROQ_KEY."
       );
     }
     return {
@@ -809,7 +833,13 @@ var AIProvider = ({ children }) => {
       provider,
       setProvider
     };
-  }, [provider, openaiKey, groqKey, openaiModel, groqModel]);
+  }, [
+    provider,
+    resolvedOpenAIKey,
+    resolvedGroqKey,
+    resolvedOpenAIModel,
+    resolvedGroqModel
+  ]);
   return /* @__PURE__ */ jsx7(AIContext.Provider, { value, children });
 };
 var AIProvider_default = AIProvider;

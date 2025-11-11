@@ -129,7 +129,14 @@ declare const Translator: React__default.FC;
 
 declare const Rewriter: React__default.FC;
 
-declare const AIProvider: React__default.FC<PropsWithChildren>;
+type AIProviderProps = PropsWithChildren<{
+    openaiKey?: string;
+    openaiModel?: string;
+    groqKey?: string;
+    groqModel?: string;
+    initialProvider?: ProviderName;
+}>;
+declare const AIProvider: React__default.FC<AIProviderProps>;
 
 declare const AIUI: {
     ChatBox: React.FC<{}>;
@@ -137,6 +144,12 @@ declare const AIUI: {
     Translator: React.FC<{}>;
     Rewriter: React.FC<{}>;
     AIProvider: React.FC<{
+        openaiKey?: string;
+        openaiModel?: string;
+        groqKey?: string;
+        groqModel?: string;
+        initialProvider?: ProviderName;
+    } & {
         children?: React.ReactNode | undefined;
     }>;
     useAI: typeof useAI;

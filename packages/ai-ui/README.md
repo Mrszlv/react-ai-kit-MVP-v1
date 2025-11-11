@@ -26,28 +26,79 @@ npm install @mrszlv/ai-ui-components
 pnpm add @mrszlv/ai-ui-components
 ```
 
-## Stuling
+## 🎨 Styling
 
-Styling: TailwindCSS (your application must have Tailwind enabled).
+This library uses TailwindCSS utility classes.
+Your app must have Tailwind enabled to render styles correctly.
 
-## ⚙️ Quick Setup
+If you’re using TailwindCSS v4, install the new plugin for Vite:
 
-### Option 1 — Named imports (recommended)
+```bash
+npm i -D @tailwindcss/vite
+```
+
+Then add it to your vite.config.ts:
+
+```ts
+import tailwind from "@tailwindcss/vite";
+
+export default defineConfig({
+  plugins: [react(), tailwind()],
+});
+```
+
+## Import the built-in CSS
+
+The library includes a pre-compiled stylesheet (dist/index.css).
+
+```tsx
+import "@mrszlv/ai-ui-components/style.css";
+```
+
+You can place this import in your main.tsx or App.tsx.
+
+## ⚙️ Environment Setup
+
+Create a .env.local file in your project root and provide your API keys:
+
+```bash
+VITE_OPENAI_KEY=your_openai_api_key
+VITE_OPENAI_MODEL=gpt-4o-mini
+
+# Optional fallback
+VITE_GROQ_KEY=your_groq_api_key
+VITE_GROQ_MODEL=llama-3.1-8b-instant
+```
+
+The library automatically switches between OpenAI and Groq if one fails.
+
+## 💡 AIProvider — Props-based Configuration
+
+Starting from v0.1.4, the AIProvider accepts API keys directly via props
+(with fallback to environment variables if props are not provided).
+
+Example:
 
 ```tsx
 import {
   AIProvider,
   ChatBox,
-  Translator,
   Summarizer,
+  Translator,
   Rewriter,
 } from "@mrszlv/ai-ui-components";
-import "@mrszlv/ai-ui-components/dist/index.css";
+import "@mrszlv/ai-ui-components/style.css";
 
 function App() {
   return (
-    <AIProvider>
-      <main>
+    <AIProvider
+      openaiKey={import.meta.env.VITE_OPENAI_KEY}
+      openaiModel={import.meta.env.VITE_OPENAI_MODEL}
+      groqKey={import.meta.env.VITE_GROQ_KEY}
+      groqModel={import.meta.env.VITE_GROQ_MODEL}
+      initialProvider="openai"
+    >
+      <main className="min-h-screen bg-neutral-950 text-white p-6">
         <ChatBox />
         <Summarizer />
         <Translator />
@@ -58,26 +109,6 @@ function App() {
 }
 
 export default App;
-```
-
-### Option 2 — Default object import
-
-```tsx
-import AIUI from "@mrszlv/ai-ui-components";
-import "@mrszlv/ai-ui-components/dist/index.css";
-
-function App() {
-  const { ChatBox, Summarizer, Translator, Rewriter, AIProvider } = AIUI;
-
-  return (
-    <AIProvider>
-      <ChatBox />
-      <Summarizer />
-      <Translator />
-      <Rewriter />
-    </AIProvider>
-  );
-}
 ```
 
 ## 🧩 Components
@@ -110,17 +141,6 @@ function Generator() {
   );
 }
 ```
-
-## 🌐 Environment Variables
-
-Create a .env.local file in your project root and provide your API keys:
-
-```bash
-VITE_OPENAI_KEY=your_openai_api_key
-VITE_GROQ_KEY=your_groq_api_key
-```
-
-The AIProvider automatically switches between OpenAI and Groq depending on API availability.
 
 ## 🧱 Package Structure
 
@@ -180,13 +200,6 @@ export {
   Button,
   Card,
 } from "@mrszlv/ai-ui-components";
-```
-
-- Or via default object:
-
-```ts
-import AIUI from "@mrszlv/ai-ui-components";
-const { AIProvider, ChatBox, Translator } = AIUI;
 ```
 
 ## 🎨 TailwindCSS Integration
