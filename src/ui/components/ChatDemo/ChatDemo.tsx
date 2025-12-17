@@ -3,8 +3,10 @@ import AIUI from "@ai-ui/components";
 
 export const ChatDemo: React.FC = () => {
   return (
-    <AIUI.AIProvider>
-      <AIUI.ChatBox />
-    </AIUI.AIProvider>
+    <AIUI.LicenseProvider licenseKey="mrszlv_demo_public_1">
+      <AIUI.AIProvider>
+        <AIUI.ChatBox />
+      </AIUI.AIProvider>
+    </AIUI.LicenseProvider>
   );
 };

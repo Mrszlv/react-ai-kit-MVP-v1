@@ -3,8 +3,10 @@ import AIUI from "@ai-ui/components";
 
 export const RewriterDemo: React.FC = () => {
   return (
-    <AIUI.AIProvider>
-      <AIUI.Rewriter />
-    </AIUI.AIProvider>
+    <AIUI.LicenseProvider licenseKey="mrszlv_demo_public_1">
+      <AIUI.AIProvider>
+        <AIUI.Rewriter />
+      </AIUI.AIProvider>
+    </AIUI.LicenseProvider>
   );
 };

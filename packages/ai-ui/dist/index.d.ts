@@ -1,5 +1,6 @@
 import * as React from 'react';
 import React__default, { PropsWithChildren } from 'react';
+import * as react_jsx_runtime from 'react/jsx-runtime';
 
 type Role = "system" | "user" | "assistant";
 type AIMessage = {
@@ -53,6 +54,31 @@ declare function useAI(defaultModel?: string): {
     error: string | null;
     provider: ProviderName;
 };
+
+type LicensePlan = "pro" | "demo";
+type LicensePayload = {
+    email: string;
+    plan: LicensePlan;
+    exp: string;
+    iat: string;
+};
+type LicenseStatus = "checking" | "valid" | "invalid";
+type LicenseState = {
+    key?: string;
+    status: LicenseStatus;
+    valid: boolean;
+    payload: LicensePayload | null;
+    error: string | null;
+};
+
+declare const LicenseContext: React.Context<LicenseState>;
+declare function useLicense(): LicenseState;
+
+type LicenseProviderProps = {
+    licenseKey?: string;
+    children: React__default.ReactNode;
+};
+declare function LicenseProvider({ licenseKey, children, }: LicenseProviderProps): react_jsx_runtime.JSX.Element;
 
 declare class OpenAIClient implements AIClient {
     name: "openai";
@@ -121,13 +147,13 @@ type CardProps = {
 };
 declare const Card: React__default.FC<CardProps>;
 
-declare const ChatBox: React__default.FC;
+declare const ChatBox: React__default.FC<{}>;
 
-declare const Summarizer: React__default.FC;
+declare const Summarizer: React__default.FC<{}>;
 
-declare const Translator: React__default.FC;
+declare const Translator: React__default.FC<{}>;
 
-declare const Rewriter: React__default.FC;
+declare const Rewriter: React__default.FC<{}>;
 
 type AIProviderProps = PropsWithChildren<{
     openaiKey?: string;
@@ -152,7 +178,8 @@ declare const AIUI: {
     } & {
         children?: React.ReactNode | undefined;
     }>;
+    LicenseProvider: typeof LicenseProvider;
     useAI: typeof useAI;
 };
 
-export { type AIClient, AIContext, type AIContextType, type AIMessage, AIProvider, AIProviderBase, Button, Card, ChatBox, GroqClient, OpenAIClient, type ProviderName, Rewriter, type Role, type StreamHandlers, Summarizer, Translator, AIUI as default, readOpenAISSE, useAI, useAIContext };
+export { type AIClient, AIContext, type AIContextType, type AIMessage, AIProvider, AIProviderBase, Button, Card, ChatBox, GroqClient, LicenseContext, LicenseProvider, OpenAIClient, type ProviderName, Rewriter, type Role, type StreamHandlers, Summarizer, Translator, AIUI as default, readOpenAISSE, useAI, useAIContext, useLicense };

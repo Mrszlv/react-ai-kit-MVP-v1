@@ -3,6 +3,10 @@ export * from "./lib/ai/types";
 export * from "./lib/ai/AIContext";
 export * from "./lib/ai/useAI";
 
+export * from "./lib/licensing/LicenseContext";
+export { LicenseProvider } from "./lib/licensing/LicenseProvider";
+export { useLicense } from "./lib/licensing/LicenseContext";
+
 export * from "./lib/ai/clients/openai";
 export * from "./lib/ai/clients/groq";
 export * from "./lib/ai/utils/sse";
@@ -18,6 +22,7 @@ export { Rewriter } from "./components/Rewriter/Rewriter";
 
 // 👇 ось тут головне: ми знаємо, що AIProvider — дефолтний в AIProvider.tsx
 import AIProviderDefault from "./lib/ai/AIProvider";
+import { LicenseProvider } from "./lib/licensing/LicenseProvider";
 
 // даємо йому іменований експорт з пакета
 export { AIProviderDefault as AIProvider };
@@ -35,6 +40,7 @@ const AIUI = {
   Translator: TranslatorComp,
   Rewriter: RewriterComp,
   AIProvider: AIProviderDefault,
+  LicenseProvider,
   useAI: useAIHook,
 };
 

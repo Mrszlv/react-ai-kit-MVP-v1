@@ -96,6 +96,129 @@ function useAI(defaultModel) {
   };
 }
 
+// src/lib/licensing/LicenseContext.tsx
+import { createContext as createContext2, useContext as useContext2 } from "react";
+var LicenseContext = createContext2({
+  key: void 0,
+  valid: false,
+  status: "invalid",
+  payload: null,
+  error: "NO_PROVIDER"
+});
+function useLicense() {
+  return useContext2(LicenseContext);
+}
+
+// src/lib/licensing/LicenseProvider.tsx
+import { useMemo } from "react";
+
+// src/lib/licensing/checkLicense.ts
+import nacl from "tweetnacl";
+var PUBLIC_KEY_B64URL = "y4hphPusMOvXm5V6SID7LYhLvf2v5etnyAtnoXNoNwM";
+function safeBase64UrlToUint8Array(b64url) {
+  try {
+    const s = (b64url || "").trim();
+    if (!s || !/^[A-Za-z0-9_-]+$/.test(s)) return null;
+    const b64 = s.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64.length % 4 ? "=".repeat(4 - b64.length % 4) : "";
+    const clean = b64 + pad;
+    const binary = atob(clean);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+function isValidDateYYYYMMDD(s) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+function todayYYYYMMDD() {
+  const d = /* @__PURE__ */ new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+function isExpired(expYYYYMMDD) {
+  return expYYYYMMDD < todayYYYYMMDD();
+}
+function parseLicense(key) {
+  if (!key.startsWith("mrszlv1.")) return null;
+  const parts = key.split(".");
+  if (parts.length !== 3) return null;
+  const payloadBytes = safeBase64UrlToUint8Array(parts[1]);
+  const sigBytes = safeBase64UrlToUint8Array(parts[2]);
+  if (!payloadBytes || !sigBytes) return null;
+  if (sigBytes.length !== 64) return null;
+  const payloadJson = new TextDecoder().decode(payloadBytes);
+  return { payloadJson, sig: sigBytes };
+}
+function verifyLicense(key) {
+  const k = key?.trim();
+  if (!k) return { valid: false, payload: null, error: "NO_KEY" };
+  if (k.startsWith("mrszlv_demo_")) {
+    return {
+      valid: true,
+      payload: {
+        email: "demo",
+        plan: "demo",
+        exp: "2999-12-31",
+        iat: todayYYYYMMDD()
+      },
+      error: null
+    };
+  }
+  const parsed = parseLicense(k);
+  if (!parsed) return { valid: false, payload: null, error: "BAD_FORMAT" };
+  let payload;
+  try {
+    payload = JSON.parse(parsed.payloadJson);
+  } catch {
+    return { valid: false, payload: null, error: "BAD_PAYLOAD_JSON" };
+  }
+  if (!payload?.email || !payload?.plan || !payload?.exp || !payload?.iat) {
+    return { valid: false, payload: null, error: "MISSING_FIELDS" };
+  }
+  if (payload.plan !== "pro" && payload.plan !== "demo") {
+    return { valid: false, payload: null, error: "BAD_PLAN" };
+  }
+  if (!isValidDateYYYYMMDD(payload.exp) || !isValidDateYYYYMMDD(payload.iat)) {
+    return { valid: false, payload: null, error: "BAD_DATE" };
+  }
+  if (isExpired(payload.exp)) {
+    return { valid: false, payload: null, error: "EXPIRED" };
+  }
+  const publicKey = safeBase64UrlToUint8Array(PUBLIC_KEY_B64URL);
+  if (!publicKey || publicKey.length !== 32) {
+    return { valid: false, payload: null, error: "BAD_PUBLIC_KEY" };
+  }
+  const payloadBytes = new TextEncoder().encode(parsed.payloadJson);
+  const ok = nacl.sign.detached.verify(payloadBytes, parsed.sig, publicKey);
+  if (!ok) return { valid: false, payload: null, error: "BAD_SIGNATURE" };
+  return { valid: true, payload, error: null };
+}
+
+// src/lib/licensing/LicenseProvider.tsx
+import { jsx } from "react/jsx-runtime";
+function LicenseProvider({
+  licenseKey,
+  children
+}) {
+  const state = useMemo(() => {
+    const res = verifyLicense(licenseKey);
+    const valid = res.valid;
+    return {
+      key: licenseKey?.trim(),
+      valid,
+      status: valid ? "valid" : "invalid",
+      payload: valid ? res.payload : null,
+      error: valid ? null : res.error
+    };
+  }, [licenseKey]);
+  return /* @__PURE__ */ jsx(LicenseContext.Provider, { value: state, children });
+}
+
 // src/lib/ai/utils/sse.ts
 async function readOpenAISSE(res, onDelta) {
   const reader = res.body.getReader();
@@ -273,14 +396,14 @@ function clsx() {
 var clsx_default = clsx;
 
 // src/components/ui/Button.tsx
-import { jsx } from "react/jsx-runtime";
+import { jsx as jsx2 } from "react/jsx-runtime";
 var Button = ({
   className,
   disabled,
   onClick,
   type = "button",
   children
-}) => /* @__PURE__ */ jsx(
+}) => /* @__PURE__ */ jsx2(
   "button",
   {
     type,
@@ -299,9 +422,9 @@ var Button = ({
 
 // src/components/ui/Card.tsx
 import "react";
-import { jsx as jsx2 } from "react/jsx-runtime";
+import { jsx as jsx3 } from "react/jsx-runtime";
 var Card = ({ children, className = "" }) => {
-  return /* @__PURE__ */ jsx2(
+  return /* @__PURE__ */ jsx3(
     "div",
     {
       className: clsx_default(
@@ -315,18 +438,133 @@ var Card = ({ children, className = "" }) => {
 };
 
 // src/components/ChatBox/ChatBox.tsx
-import { useMemo, useRef, useState as useState2 } from "react";
-import { jsx as jsx3, jsxs } from "react/jsx-runtime";
-var ChatBox = () => {
+import { useMemo as useMemo2, useRef, useState as useState2 } from "react";
+
+// src/lib/licensing/withLicenseGuard.tsx
+import "react";
+
+// src/components/PaywallCard/PaywallCard.tsx
+import "react";
+import { jsx as jsx4, jsxs } from "react/jsx-runtime";
+var DEFAULT_CTA = "https://t.me/@miroszlavpopovics";
+var DEFAULT_PKG = "@mrszlv/ai-ui-components";
+var PaywallCard = ({
+  title = "Pro component",
+  message = "This component is available only with a valid license.",
+  reason = 'Wrap your app with <LicenseProvider licenseKey="..." />.',
+  ctaHref = DEFAULT_CTA,
+  ctaLabel = "Get license",
+  npmPackage = DEFAULT_PKG,
+  debugReason = null
+}) => {
+  const handleGetLicense = () => {
+    window.open(ctaHref, "_blank", "noopener,noreferrer");
+  };
+  const handleCopy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    }
+  };
+  const installCmd = `npm i ${npmPackage}`;
+  return /* @__PURE__ */ jsx4("div", { className: "mx-auto w-full max-w-5xl rounded-3xl border border-white/10 bg-gradient-to-b from-slate-950 to-slate-900 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.45)]", children: /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-3", children: [
+    /* @__PURE__ */ jsx4("h3", { className: "text-lg font-semibold text-white", children: title }),
+    /* @__PURE__ */ jsx4("p", { className: "text-sm text-white/80", children: message }),
+    /* @__PURE__ */ jsx4("p", { className: "text-sm text-white/55", children: reason }),
+    debugReason ? /* @__PURE__ */ jsxs("div", { className: "mt-2 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70", children: [
+      /* @__PURE__ */ jsx4("span", { className: "font-medium text-white/80", children: "debug:" }),
+      " ",
+      debugReason
+    ] }) : null,
+    /* @__PURE__ */ jsxs("div", { className: "mt-5 flex flex-wrap items-center gap-3", children: [
+      /* @__PURE__ */ jsx4(
+        "button",
+        {
+          type: "button",
+          onClick: handleGetLicense,
+          className: "rounded-xl bg-indigo-400 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow hover:bg-indigo-300 active:scale-[0.99]",
+          children: ctaLabel
+        }
+      ),
+      /* @__PURE__ */ jsxs("div", { className: "flex flex-wrap items-center gap-2 text-xs text-white/60", children: [
+        /* @__PURE__ */ jsx4("span", { className: "rounded-lg border border-white/10 bg-white/5 px-2 py-1", children: installCmd }),
+        /* @__PURE__ */ jsx4(
+          "button",
+          {
+            type: "button",
+            onClick: () => handleCopy(installCmd),
+            className: "rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-white/80 hover:bg-white/10",
+            children: "Copy"
+          }
+        )
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: "mt-5 rounded-2xl border border-white/10 bg-white/5 p-4", children: [
+      /* @__PURE__ */ jsx4("div", { className: "text-xs font-semibold tracking-wide text-white/70", children: "How to activate" }),
+      /* @__PURE__ */ jsxs("ol", { className: "mt-2 list-decimal space-y-1 pl-5 text-sm text-white/70", children: [
+        /* @__PURE__ */ jsx4("li", { children: "Buy/get a license key from the link above." }),
+        /* @__PURE__ */ jsxs("li", { children: [
+          "Wrap your app:",
+          /* @__PURE__ */ jsx4("span", { className: "ml-2 rounded-md bg-black/40 px-2 py-1 font-mono text-xs text-white/80", children: '<LicenseProvider licenseKey="..." />' })
+        ] }),
+        /* @__PURE__ */ jsx4("li", { children: "Reload the app and the component will unlock." })
+      ] })
+    ] })
+  ] }) });
+};
+
+// src/lib/licensing/withLicenseGuard.tsx
+import { jsx as jsx5 } from "react/jsx-runtime";
+var LICENSE_URL = "https://t.me/@miroszlavpopovics";
+function withLicenseGuard(Wrapped, options) {
+  const ComponentWithGuard = (props) => {
+    const { status, valid, error } = useLicense();
+    if (status === "checking") return null;
+    if (!valid) {
+      const isDev = typeof import.meta !== "undefined" && import.meta.env?.MODE === "development";
+      return /* @__PURE__ */ jsx5(
+        PaywallCard,
+        {
+          title: options?.title,
+          message: options?.message ?? "This component is available only with a valid @mrszlv/ai-ui-components license.",
+          reason: options?.reason ?? 'Wrap your app with <LicenseProvider licenseKey="..." />.',
+          ctaHref: LICENSE_URL,
+          ctaLabel: "Get license",
+          npmPackage: "@mrszlv/ai-ui-components",
+          debugReason: isDev ? error : null
+        }
+      );
+    }
+    return /* @__PURE__ */ jsx5(Wrapped, { ...props });
+  };
+  ComponentWithGuard.displayName = `WithLicenseGuard(${Wrapped.displayName || Wrapped.name || "Component"})`;
+  return ComponentWithGuard;
+}
+
+// src/components/ChatBox/ChatBox.tsx
+import { jsx as jsx6, jsxs as jsxs2 } from "react/jsx-runtime";
+var ChatBoxInner = () => {
   const { chat, loading, error, provider } = useAI();
   const [messages, setMessages] = useState2([]);
   const [input, setInput] = useState2("");
   const endRef = useRef(null);
-  const system = useMemo(
-    () => ({ role: "system", content: "You are a helpful assistant." }),
+  const system = useMemo2(
+    () => ({
+      role: "system",
+      content: [
+        "You are a helpful AI assistant.",
+        "Keep responses short and practical."
+      ].join("\n")
+    }),
     []
   );
-  async function send() {
+  async function handleSend() {
     const text = input.trim();
     if (!text) return;
     const next = [...messages, { role: "user", content: text }];
@@ -335,179 +573,239 @@ var ChatBox = () => {
     setMessages([...next, { role: "assistant", content: reply }]);
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }
-  return /* @__PURE__ */ jsxs(Card, { className: "space-y-4", children: [
-    /* @__PURE__ */ jsx3("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx3("h3", { className: "mr-1 text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4AC} ChatBox" }) }),
-    /* @__PURE__ */ jsxs(
+  return /* @__PURE__ */ jsxs2(Card, { className: "max-w-5xl mx-auto space-y-5 bg-slate-950/70 border-slate-800", children: [
+    /* @__PURE__ */ jsx6("div", { className: "flex items-center justify-between gap-3", children: /* @__PURE__ */ jsxs2("div", { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx6("span", { className: "inline-flex h-7 w-7 items-center justify-center rounded-full bg-violet-500/20 text-violet-300", children: "\u{1F4AC}" }),
+      /* @__PURE__ */ jsxs2("div", { children: [
+        /* @__PURE__ */ jsx6("h3", { className: "text-lg font-semibold text-slate-50", children: "ChatBox" }),
+        /* @__PURE__ */ jsx6("p", { className: "text-xs text-slate-400", children: "Multi-turn chat with your AI provider." })
+      ] })
+    ] }) }),
+    /* @__PURE__ */ jsxs2(
       "div",
       {
         className: clsx_default(
-          "w-full min-h-40 max-h-112 overflow-auto rounded-xl border p-3 text-sm",
-          "border-slate-200 bg-slate-50",
-          "dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          "h-56 md:h-64 w-full overflow-auto rounded-2xl border border-slate-700",
+          "bg-slate-950/60 px-3 py-3 text-sm"
         ),
         children: [
-          messages.length === 0 && /* @__PURE__ */ jsx3("div", { className: "text-slate-500 dark:text-slate-400", children: "Start the conversation" }),
-          messages.map((m, i) => /* @__PURE__ */ jsx3(
+          messages.length === 0 && /* @__PURE__ */ jsx6("div", { className: "flex h-full items-center justify-center text-sm text-slate-500", children: "Start the conversation" }),
+          messages.map((m, idx) => /* @__PURE__ */ jsx6(
             "div",
             {
               className: clsx_default(
                 "mb-2 flex",
                 m.role === "user" ? "justify-end" : "justify-start"
               ),
-              children: /* @__PURE__ */ jsx3(
+              children: /* @__PURE__ */ jsx6(
                 "div",
                 {
                   className: clsx_default(
-                    "max-w-[80%] rounded-2xl px-3 py-2 shadow-sm whitespace-pre-wrap wrap-break-wordbreak-words",
-                    m.role === "user" ? "bg-indigo-600 text-white dark:bg-indigo-500" : "bg-white text-slate-900 border border-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700"
+                    "max-w-[80%] rounded-2xl px-3 py-2 shadow-sm whitespace-pre-wrap break-words",
+                    m.role === "user" ? "bg-indigo-600 text-white" : "bg-slate-900 text-slate-100 border border-slate-700"
                   ),
                   children: m.content
                 }
               )
             },
-            i
+            idx
           )),
-          /* @__PURE__ */ jsx3("div", { ref: endRef })
+          /* @__PURE__ */ jsx6("div", { ref: endRef })
         ]
       }
     ),
-    /* @__PURE__ */ jsxs("div", { className: "flex w-full gap-2", children: [
-      /* @__PURE__ */ jsx3(
+    /* @__PURE__ */ jsxs2("div", { className: "flex w-full gap-3", children: [
+      /* @__PURE__ */ jsx6(
         "input",
         {
           "aria-label": "Type a message",
           className: clsx_default(
-            "flex-1 rounded-xl border px-3 py-2 text-sm outline-none",
-            "placeholder:text-slate-400",
-            "border-slate-300 bg-white focus:ring-2 focus:ring-indigo-500 text-slate-900",
-            "dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-indigo-400"
+            "flex-1 rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 outline-none",
+            "placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40"
           ),
           value: input,
           onChange: (e) => setInput(e.target.value),
           onKeyDown: (e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              send();
+              void handleSend();
             }
           },
-          placeholder: "Type a message..."
+          placeholder: "Ask anything\u2026",
+          disabled: loading
         }
       ),
-      /* @__PURE__ */ jsx3(Button, { disabled: loading || input.trim().length === 0, onClick: send, children: loading ? "\u2026" : "Send" })
+      /* @__PURE__ */ jsx6(
+        Button,
+        {
+          type: "button",
+          disabled: loading,
+          onClick: () => void handleSend(),
+          className: "px-5",
+          children: loading ? "Sending..." : "Send"
+        }
+      )
     ] }),
-    /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
-      provider && /* @__PURE__ */ jsxs("span", { className: "rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300", children: [
+    /* @__PURE__ */ jsxs2("div", { className: "flex items-center gap-3", children: [
+      provider && /* @__PURE__ */ jsxs2("span", { className: "rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300", children: [
         "via ",
         provider
       ] }),
-      error && /* @__PURE__ */ jsx3("p", { className: "text-xs text-slate-400", children: error })
+      error && /* @__PURE__ */ jsx6("p", { className: "text-xs text-slate-400", children: error })
     ] })
   ] });
 };
+var ChatBox = withLicenseGuard(ChatBoxInner, {
+  title: "ChatBox (Pro)",
+  message: "ChatBox is available only with a valid @mrszlv/ai-ui-components license."
+});
 
 // src/components/Summarizer/Summarizer.tsx
 import { useState as useState3 } from "react";
-import { jsx as jsx4, jsxs as jsxs2 } from "react/jsx-runtime";
-var Summarizer = () => {
+import { jsx as jsx7, jsxs as jsxs3 } from "react/jsx-runtime";
+function buildPrompt(text, language, format) {
+  return [
+    `You are a professional text summarizer that produces ${format.toLowerCase()} summaries in ${language}.`,
+    "Rules:",
+    "- Preserve meaning and tone.",
+    "- Avoid changing facts.",
+    "- Keep formatting consistent (Markdown / line breaks).",
+    "",
+    "Text:",
+    text
+  ].join("\n");
+}
+var SummarizerInner = () => {
   const { streamGenerate, loading, error, provider } = useAI();
   const [src, setSrc] = useState3("");
   const [out, setOut] = useState3("");
   const [style, setStyle] = useState3("Bulleted");
   const [lang, setLang] = useState3("English");
-  function buildPrompt3(text, language, format) {
-    return [
-      `You are a professional text summarizer that produces ${format.toLowerCase()} summaries in ${language}.`,
-      "Rules:",
-      "- Preserve meaning and tone.",
-      "- Avoid changing facts.",
-      "- Keep formatting consistent (Markdown allowed).",
-      "- Use bullet points if requested.",
-      "- Output only the summary text.",
-      "",
-      "Text:",
-      text
-    ].join("\n");
-  }
-  async function run() {
+  async function handleSummarize() {
+    const text = src.trim();
+    if (!text) return;
+    const prompt = buildPrompt(text, lang, style);
     setOut("");
-    const prompt = buildPrompt3(src, lang, style);
     await streamGenerate(prompt, {
-      onToken: (t) => setOut((p) => p + t),
-      onDone: (final) => setOut(final)
+      onToken: (token) => {
+        setOut((prev) => prev + token);
+      },
+      onDone: () => {
+      }
     });
   }
-  return /* @__PURE__ */ jsxs2(Card, { className: "space-y-4", children: [
-    /* @__PURE__ */ jsxs2("div", { className: "flex flex-wrap items-center gap-2", children: [
-      /* @__PURE__ */ jsx4("h3", { className: "mr-1 text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F4DD} Summarizer" }),
-      /* @__PURE__ */ jsxs2("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx4(
-          "select",
+  return /* @__PURE__ */ jsxs3(Card, { className: "max-w-5xl mx-auto space-y-5 bg-slate-950/70 border-slate-800", children: [
+    /* @__PURE__ */ jsx7("div", { className: "flex items-center justify-between gap-3", children: /* @__PURE__ */ jsxs3("div", { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx7("span", { className: "inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300", children: "\u{1F4DD}" }),
+      /* @__PURE__ */ jsxs3("div", { children: [
+        /* @__PURE__ */ jsx7("h3", { className: "text-lg font-semibold text-slate-50", children: "Summarizer" }),
+        /* @__PURE__ */ jsx7("p", { className: "text-xs text-slate-400", children: "Turn long texts into clean summaries." })
+      ] })
+    ] }) }),
+    /* @__PURE__ */ jsxs3("div", { className: "grid gap-4 md:grid-cols-2 md:items-start", children: [
+      /* @__PURE__ */ jsxs3("div", { className: "flex flex-col gap-3", children: [
+        /* @__PURE__ */ jsxs3("div", { className: "flex items-center justify-between text-xs text-slate-400", children: [
+          /* @__PURE__ */ jsx7("span", { children: "Source text" }),
+          /* @__PURE__ */ jsx7("span", { className: "opacity-60", children: src.trim().length ? `${src.trim().length} chars` : "Paste text\u2026" })
+        ] }),
+        /* @__PURE__ */ jsx7(
+          "textarea",
           {
-            title: "selectSummizer",
-            className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
-            value: lang,
-            onChange: (e) => setLang(e.target.value),
-            children: [
-              "Ukrainian",
-              "English",
-              "Polish",
-              "German",
-              "Spanish",
-              "French",
-              "Italian",
-              "Portuguese",
-              "Russian",
-              "Turkish"
-            ].map((l) => /* @__PURE__ */ jsx4("option", { value: l, children: l }, l))
+            className: "h-44 md:h-56 w-full resize-none rounded-xl border border-slate-700 bg-slate-950/70 p-3 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40",
+            value: src,
+            onChange: (e) => setSrc(e.target.value),
+            placeholder: "Paste text to summarize..."
           }
         ),
-        /* @__PURE__ */ jsxs2(
-          "select",
+        /* @__PURE__ */ jsxs3("div", { className: "flex flex-wrap items-center gap-3 text-xs text-slate-400", children: [
+          /* @__PURE__ */ jsxs3("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx7("span", { children: "Style:" }),
+            /* @__PURE__ */ jsxs3(
+              "select",
+              {
+                title: "select summarizer",
+                className: "rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100",
+                value: style,
+                onChange: (e) => setStyle(e.target.value),
+                children: [
+                  /* @__PURE__ */ jsx7("option", { children: "Bulleted" }),
+                  /* @__PURE__ */ jsx7("option", { children: "Short paragraph" }),
+                  /* @__PURE__ */ jsx7("option", { children: "Very concise" })
+                ]
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxs3("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx7("span", { children: "Language:" }),
+            /* @__PURE__ */ jsxs3(
+              "select",
+              {
+                title: "select summarizer",
+                className: "rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100",
+                value: lang,
+                onChange: (e) => setLang(e.target.value),
+                children: [
+                  /* @__PURE__ */ jsx7("option", { value: "auto", children: "Auto" }),
+                  /* @__PURE__ */ jsx7("option", { value: "English", children: "English" }),
+                  /* @__PURE__ */ jsx7("option", { value: "Ukrainian", children: "Ukrainian" }),
+                  /* @__PURE__ */ jsx7("option", { value: "Polish", children: "Polish" }),
+                  /* @__PURE__ */ jsx7("option", { value: "German", children: "German" }),
+                  /* @__PURE__ */ jsx7("option", { value: "Spanish", children: "Spanish" }),
+                  /* @__PURE__ */ jsx7("option", { value: "French", children: "French" }),
+                  /* @__PURE__ */ jsx7("option", { value: "Italian", children: "Italian" }),
+                  /* @__PURE__ */ jsx7("option", { value: "Portuguese", children: "Portuguese" }),
+                  /* @__PURE__ */ jsx7("option", { value: "Russian", children: "Russian" }),
+                  /* @__PURE__ */ jsx7("option", { value: "Turkish", children: "Turkish" })
+                ]
+              }
+            )
+          ] })
+        ] }),
+        /* @__PURE__ */ jsx7("div", { className: "pt-1", children: /* @__PURE__ */ jsx7(
+          Button,
           {
-            title: "selectSummizer",
-            className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
-            value: style,
-            onChange: (e) => setStyle(e.target.value),
-            children: [
-              /* @__PURE__ */ jsx4("option", { value: "Bulleted", children: "Bulleted" }),
-              /* @__PURE__ */ jsx4("option", { value: "Paragraph", children: "Paragraph" }),
-              /* @__PURE__ */ jsx4("option", { value: "Compact", children: "Compact" })
-            ]
+            type: "button",
+            disabled: loading,
+            onClick: () => void handleSummarize(),
+            className: "px-5",
+            children: loading ? "Summarizing..." : "Summarize"
           }
-        )
+        ) }),
+        error && /* @__PURE__ */ jsx7("p", { className: "text-xs text-red-400", children: String(error) })
+      ] }),
+      /* @__PURE__ */ jsxs3("div", { className: "flex flex-col gap-3", children: [
+        /* @__PURE__ */ jsx7("div", { className: "flex items-center justify-between text-xs text-slate-400", children: /* @__PURE__ */ jsx7("span", { children: "Summary" }) }),
+        /* @__PURE__ */ jsx7("div", { className: "h-44 md:h-56 rounded-xl border border-slate-700 bg-slate-950/50 p-3 text-sm text-slate-100 overflow-auto", children: out ? /* @__PURE__ */ jsx7("div", { className: "whitespace-pre-wrap break-words", children: out }) : /* @__PURE__ */ jsx7("span", { className: "text-slate-500", children: "Summary will appear here\u2026" }) }),
+        /* @__PURE__ */ jsxs3("div", { className: "mt-1 text-[11px] text-slate-500 flex flex-wrap gap-3", children: [
+          /* @__PURE__ */ jsxs3("span", { children: [
+            "Style: ",
+            /* @__PURE__ */ jsx7("span", { className: "text-slate-300", children: style })
+          ] }),
+          /* @__PURE__ */ jsxs3("span", { children: [
+            "Language: ",
+            /* @__PURE__ */ jsx7("span", { className: "text-slate-300", children: lang })
+          ] })
+        ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsx4(
-      "textarea",
-      {
-        className: "h-40 w-full resize-none rounded-xl border p-3 text-sm\r\n                   border-slate-300 bg-white text-slate-900 placeholder:text-slate-400\r\n                   dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500",
-        placeholder: "Paste text here\u2026",
-        value: src,
-        onChange: (e) => setSrc(e.target.value)
-      }
-    ),
-    /* @__PURE__ */ jsx4("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx4(Button, { disabled: loading || !src.trim(), onClick: run, children: loading ? "\u2026" : "Summarize" }) }),
-    /* @__PURE__ */ jsx4(
-      "div",
-      {
-        className: "min-h-16 w-full whitespace-pre-wrap rounded-xl border p-3 text-sm\r\n                      border-slate-200 bg-white/70 text-slate-900\r\n                      dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100",
-        children: out || "Output will appear here"
-      }
-    ),
-    /* @__PURE__ */ jsxs2("div", { className: "flex items-center gap-3", children: [
-      provider && /* @__PURE__ */ jsxs2("span", { className: "rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300", children: [
+    /* @__PURE__ */ jsxs3("div", { className: "flex items-center gap-3", children: [
+      provider && /* @__PURE__ */ jsxs3("span", { className: "rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300", children: [
         "via ",
         provider
       ] }),
-      error && /* @__PURE__ */ jsx4("p", { className: "text-xs text-slate-400", children: error })
+      error && /* @__PURE__ */ jsx7("p", { className: "text-xs text-slate-400", children: error })
     ] })
   ] });
 };
+var Summarizer = withLicenseGuard(SummarizerInner, {
+  title: "Summarizer (Pro)",
+  message: "Summarizer is available only with a valid @mrszlv/ai-ui-components license."
+});
 
 // src/components/Translator/Translator.tsx
 import { useState as useState4 } from "react";
-import { jsx as jsx5, jsxs as jsxs3 } from "react/jsx-runtime";
-function buildPrompt(text, from, to) {
+import { jsx as jsx8, jsxs as jsxs4 } from "react/jsx-runtime";
+function buildPrompt2(text, from, to) {
   return [
     `You are a precise translator from ${from} to ${to}.`,
     "Rules:",
@@ -521,268 +819,359 @@ function buildPrompt(text, from, to) {
     text
   ].join("\n");
 }
-var Translator = () => {
+var TranslatorInner = () => {
   const { streamGenerate, loading, error, provider } = useAI();
   const [from, setFrom] = useState4("Ukrainian");
   const [to, setTo] = useState4("English");
   const [src, setSrc] = useState4("");
   const [out, setOut] = useState4("");
-  async function run() {
+  async function handleTranslate() {
+    const text = src.trim();
+    if (!text) return;
+    const prompt = buildPrompt2(text, from, to);
     setOut("");
-    const prompt = buildPrompt(src, from, to);
     await streamGenerate(prompt, {
-      onToken: (t) => setOut((p) => p + t),
-      onDone: (final) => setOut(final)
+      onToken: (token) => {
+        setOut((prev) => prev + token);
+      },
+      onDone: () => {
+      }
     });
   }
-  function swap() {
-    setFrom(to);
-    setTo(from);
-    if (out) setSrc(out);
-    setOut("");
-  }
-  const langs = [
-    "Ukrainian",
-    "English",
-    "Polish",
-    "German",
-    "Spanish",
-    "French",
-    "Italian",
-    "Portuguese",
-    "Russian",
-    "Turkish"
-  ];
-  return /* @__PURE__ */ jsxs3(Card, { className: "space-y-4", children: [
-    /* @__PURE__ */ jsxs3("div", { className: "flex flex-wrap items-center gap-2", children: [
-      /* @__PURE__ */ jsx5("h3", { className: "mr-1 text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u{1F310} Translator" }),
-      /* @__PURE__ */ jsxs3("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx5(
-          "select",
+  return /* @__PURE__ */ jsxs4(Card, { className: "max-w-5xl mx-auto space-y-5 bg-slate-950/70 border-slate-800", children: [
+    /* @__PURE__ */ jsx8("div", { className: "flex items-center justify-between gap-3", children: /* @__PURE__ */ jsxs4("div", { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx8("span", { className: "inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-500/20 text-sky-300", children: "\u{1F30D}" }),
+      /* @__PURE__ */ jsxs4("div", { children: [
+        /* @__PURE__ */ jsx8("h3", { className: "text-lg font-semibold text-slate-50", children: "Translator" }),
+        /* @__PURE__ */ jsx8("p", { className: "text-xs text-slate-400", children: "Translate text between languages with AI." })
+      ] })
+    ] }) }),
+    /* @__PURE__ */ jsxs4("div", { className: "grid gap-4 md:grid-cols-2 md:items-start", children: [
+      /* @__PURE__ */ jsxs4("div", { className: "flex flex-col gap-3", children: [
+        /* @__PURE__ */ jsxs4("div", { className: "flex items-center justify-between text-xs text-slate-400", children: [
+          /* @__PURE__ */ jsx8("span", { children: "Source text" }),
+          /* @__PURE__ */ jsx8("span", { className: "opacity-60", children: src.trim().length ? `${src.trim().length} chars` : "Paste text\u2026" })
+        ] }),
+        /* @__PURE__ */ jsx8(
+          "textarea",
           {
-            title: "selectTranslator",
-            className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
-            value: from,
-            onChange: (e) => setFrom(e.target.value),
-            children: langs.map((l) => /* @__PURE__ */ jsx5("option", { value: l, children: l }, `f-${l}`))
+            className: "h-44 md:h-56 w-full resize-none rounded-xl border border-slate-700 bg-slate-950/70 p-3 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40",
+            value: src,
+            onChange: (e) => setSrc(e.target.value),
+            placeholder: "Type or paste text to translate..."
           }
         ),
-        /* @__PURE__ */ jsx5(
-          "button",
+        /* @__PURE__ */ jsxs4("div", { className: "flex flex-wrap items-center gap-3 text-xs text-slate-400", children: [
+          /* @__PURE__ */ jsxs4("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx8("span", { children: "From:" }),
+            /* @__PURE__ */ jsxs4(
+              "select",
+              {
+                title: "select translator",
+                className: "rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100",
+                value: from,
+                onChange: (e) => setFrom(e.target.value),
+                children: [
+                  /* @__PURE__ */ jsx8("option", { value: "English", children: "English" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Ukrainian", children: "Ukrainian" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Polish", children: "Polish" }),
+                  /* @__PURE__ */ jsx8("option", { value: "German", children: "German" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Spanish", children: "Spanish" }),
+                  /* @__PURE__ */ jsx8("option", { value: "French", children: "French" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Italian", children: "Italian" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Portuguese", children: "Portuguese" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Russian", children: "Russian" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Turkish", children: "Turkish" })
+                ]
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxs4("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx8("span", { children: "To:" }),
+            /* @__PURE__ */ jsxs4(
+              "select",
+              {
+                title: "select translator",
+                className: "rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100",
+                value: to,
+                onChange: (e) => setTo(e.target.value),
+                children: [
+                  /* @__PURE__ */ jsx8("option", { value: "English", children: "English" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Ukrainian", children: "Ukrainian" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Polish", children: "Polish" }),
+                  /* @__PURE__ */ jsx8("option", { value: "German", children: "German" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Spanish", children: "Spanish" }),
+                  /* @__PURE__ */ jsx8("option", { value: "French", children: "French" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Italian", children: "Italian" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Portuguese", children: "Portuguese" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Russian", children: "Russian" }),
+                  /* @__PURE__ */ jsx8("option", { value: "Turkish", children: "Turkish" })
+                ]
+              }
+            )
+          ] })
+        ] }),
+        /* @__PURE__ */ jsx8("div", { className: "pt-1", children: /* @__PURE__ */ jsx8(
+          Button,
           {
             type: "button",
-            className: "rounded-full border px-3 py-1 text-sm\r\n                       border-slate-300 bg-white hover:bg-slate-50 text-slate-900\r\n                       dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800",
-            onClick: swap,
-            title: "Swap languages",
-            children: "\u21C4"
+            disabled: loading,
+            onClick: () => void handleTranslate(),
+            className: "px-5",
+            children: loading ? "Translating..." : "Translate"
           }
-        ),
-        /* @__PURE__ */ jsx5(
-          "select",
-          {
-            title: "selectTranslator",
-            className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
-            value: to,
-            onChange: (e) => setTo(e.target.value),
-            children: langs.map((l) => /* @__PURE__ */ jsx5("option", { value: l, children: l }, `t-${l}`))
-          }
-        )
+        ) })
+      ] }),
+      /* @__PURE__ */ jsxs4("div", { className: "flex flex-col gap-3", children: [
+        /* @__PURE__ */ jsx8("div", { className: "flex items-center justify-between text-xs text-slate-400", children: /* @__PURE__ */ jsx8("span", { children: "Translation" }) }),
+        /* @__PURE__ */ jsx8("div", { className: "h-44 md:h-56 rounded-xl border border-slate-700 bg-slate-950/50 p-3 text-sm text-slate-100 overflow-auto", children: out ? /* @__PURE__ */ jsx8("div", { className: "whitespace-pre-wrap break-words", children: out }) : /* @__PURE__ */ jsx8("span", { className: "text-slate-500", children: "Translation will appear here\u2026" }) }),
+        /* @__PURE__ */ jsxs4("div", { className: "mt-1 text-[11px] text-slate-500 flex flex-wrap gap-3", children: [
+          /* @__PURE__ */ jsxs4("span", { children: [
+            "From: ",
+            /* @__PURE__ */ jsx8("span", { className: "text-slate-300", children: from })
+          ] }),
+          /* @__PURE__ */ jsxs4("span", { children: [
+            "To: ",
+            /* @__PURE__ */ jsx8("span", { className: "text-slate-300", children: to })
+          ] })
+        ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsx5(
-      "textarea",
-      {
-        className: "h-40 w-full resize-none rounded-xl border p-3 text-sm\r\n                   border-slate-300 bg-white text-slate-900 placeholder:text-slate-400\r\n                   dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500",
-        placeholder: "Type or paste text\u2026",
-        value: src,
-        onChange: (e) => setSrc(e.target.value)
-      }
-    ),
-    /* @__PURE__ */ jsx5("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx5(Button, { disabled: !src.trim() || loading, onClick: run, children: loading ? "\u2026" : "Translate" }) }),
-    /* @__PURE__ */ jsx5(
-      "div",
-      {
-        className: "min-h-16 w-full whitespace-pre-wrap rounded-xl border p-3 text-sm\r\n                      border-slate-200 bg-white/70 text-slate-900\r\n                      dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100",
-        children: out || "Output will appear here"
-      }
-    ),
-    /* @__PURE__ */ jsxs3("div", { className: "flex items-center gap-3", children: [
-      provider && /* @__PURE__ */ jsxs3("span", { className: "rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300", children: [
+    /* @__PURE__ */ jsxs4("div", { className: "flex items-center gap-3", children: [
+      provider && /* @__PURE__ */ jsxs4("span", { className: "rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300", children: [
         "via ",
         provider
       ] }),
-      error && /* @__PURE__ */ jsx5("p", { className: "text-xs text-slate-400", children: error })
+      error && /* @__PURE__ */ jsx8("p", { className: "text-xs text-slate-400", children: error })
     ] })
   ] });
 };
+var Translator = withLicenseGuard(TranslatorInner, {
+  title: "Translator (Pro)",
+  message: "Translator is available only with a valid @mrszlv/ai-ui-components license."
+});
 
 // src/components/Rewriter/Rewriter.tsx
-import { useMemo as useMemo2, useState as useState5 } from "react";
-import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
-function buildPrompt2(text, opts) {
+import { useMemo as useMemo3, useState as useState5 } from "react";
+import { jsx as jsx9, jsxs as jsxs5 } from "react/jsx-runtime";
+function buildPrompt3(text, opts) {
   const toneLine = {
     neutral: "Use a clear, neutral tone.",
     formal: "Use a formal, concise tone suitable for business/academic contexts.",
     casual: "Use a casual, conversational tone.",
-    friendly: "Use a warm, friendly and empathetic tone.",
-    professional: "Use a professional tone with precise wording.",
-    confident: "Use a confident, assertive tone."
+    friendly: "Use a warm, friendly tone.",
+    professional: "Use a professional, confident tone.",
+    confident: "Use a bold, confident tone."
   };
   const lengthLine = {
-    shorter: "Make the text shorter while preserving all key meaning.",
+    shorter: "Make it more concise while preserving meaning.",
     same: "Keep approximately the same length.",
-    longer: "Expand the text slightly by adding clarifying details."
+    longer: "Expand with a bit more detail while staying on-topic."
   };
   const creativityLine = {
-    low: "Be conservative. Avoid creative changes; keep structure close to the original.",
-    medium: "Allow moderate rephrasing to improve clarity and flow.",
-    high: "Allow creative rephrasing while strictly preserving facts and intent."
+    low: "Keep wording very close to the original.",
+    medium: "Improve clarity and flow while preserving meaning.",
+    high: "Be more creative with wording, but keep the same core message."
   };
-  const langLine = !opts.targetLanguage || opts.targetLanguage === "auto" ? "Keep the original language." : `Write the final result in ${opts.targetLanguage}.`;
+  const lang = opts.targetLanguage && opts.targetLanguage !== "auto" ? `Rewrite in ${opts.targetLanguage}.` : "Keep the original language.";
   return [
-    "You are an expert text rewriter.",
+    "You are a professional copy editor.",
     toneLine[opts.tone],
     lengthLine[opts.length],
     creativityLine[opts.creativity],
-    langLine,
+    lang,
     "",
-    "Hard rules:",
-    "- Preserve meaning, facts, numbers, units, named entities.",
-    "- Preserve Markdown structure (headers, lists, tables).",
-    "- Do NOT translate or alter code blocks, inline code, URLs, or file paths.",
-    "- Keep emojis and punctuation where appropriate.",
-    "- Maintain paragraph and line break structure unless clarity requires change.",
-    "",
-    "Rewrite the following text accordingly:",
+    "Text:",
     text
   ].join("\n");
 }
-var Rewriter = () => {
+var RewriterInner = () => {
   const { streamGenerate, loading, error, provider } = useAI();
+  const [src, setSrc] = useState5("");
+  const [out, setOut] = useState5("");
   const [tone, setTone] = useState5("neutral");
   const [length, setLength] = useState5("same");
   const [creativity, setCreativity] = useState5("medium");
   const [lang, setLang] = useState5("auto");
-  const [src, setSrc] = useState5("");
-  const [out, setOut] = useState5("");
-  const canRun = useMemo2(() => src.trim().length > 0, [src]);
-  async function run() {
-    setOut("");
-    const prompt = buildPrompt2(src, {
+  const prompt = useMemo3(
+    () => buildPrompt3(src, {
       tone,
       length,
       creativity,
       targetLanguage: lang
-    });
+    }),
+    [src, tone, length, creativity, lang]
+  );
+  async function handleRewrite() {
+    const text = src.trim();
+    if (!text) return;
+    setOut("");
     await streamGenerate(prompt, {
-      onToken: (t) => setOut((p) => p + t),
-      onDone: (final) => setOut(final)
+      onToken: (token) => {
+        setOut((prev) => prev + token);
+      },
+      onDone: () => {
+      }
     });
   }
-  const langs = [
-    "auto",
-    "Ukrainian",
-    "English",
-    "Polish",
-    "German",
-    "Spanish",
-    "French",
-    "Italian",
-    "Portuguese",
-    "Russian",
-    "Turkish"
-  ];
-  return /* @__PURE__ */ jsxs4(Card, { className: "space-y-4", children: [
-    /* @__PURE__ */ jsxs4("div", { className: "flex flex-wrap items-center gap-2", children: [
-      /* @__PURE__ */ jsx6("h3", { className: "mr-1 text-lg font-semibold text-slate-900 dark:text-slate-100", children: "\u270D\uFE0F Rewriter" }),
-      /* @__PURE__ */ jsxs4("div", { className: "flex flex-wrap items-center gap-2", children: [
-        /* @__PURE__ */ jsx6(
-          "select",
+  return /* @__PURE__ */ jsxs5(Card, { className: "max-w-5xl mx-auto space-y-5 bg-slate-950/70 border-slate-800", children: [
+    /* @__PURE__ */ jsx9("div", { className: "flex items-center justify-between gap-3", children: /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ jsx9("span", { className: "inline-flex h-7 w-7 items-center justify-center rounded-full bg-rose-500/20 text-rose-300", children: "\u270F\uFE0F" }),
+      /* @__PURE__ */ jsxs5("div", { children: [
+        /* @__PURE__ */ jsx9("h3", { className: "text-lg font-semibold text-slate-50", children: "Rewriter" }),
+        /* @__PURE__ */ jsx9("p", { className: "text-xs text-slate-400", children: "Improve tone, clarity and style of your text." })
+      ] })
+    ] }) }),
+    /* @__PURE__ */ jsxs5("div", { className: "grid gap-4 md:grid-cols-2 md:items-start", children: [
+      /* @__PURE__ */ jsxs5("div", { className: "flex flex-col gap-3", children: [
+        /* @__PURE__ */ jsxs5("div", { className: "flex items-center justify-between text-xs text-slate-400", children: [
+          /* @__PURE__ */ jsx9("span", { children: "Original text" }),
+          /* @__PURE__ */ jsx9("span", { className: "opacity-60", children: src.trim().length ? `${src.trim().length} chars` : "Paste text\u2026" })
+        ] }),
+        /* @__PURE__ */ jsx9(
+          "textarea",
           {
-            title: "selectRewriter",
-            className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
-            value: tone,
-            onChange: (e) => setTone(e.target.value),
-            children: [
-              "neutral",
-              "formal",
-              "casual",
-              "friendly",
-              "professional",
-              "confident"
-            ].map((t) => /* @__PURE__ */ jsx6("option", { value: t, children: t[0].toUpperCase() + t.slice(1) }, t))
+            className: "h-44 md:h-56 w-full resize-none rounded-xl border border-slate-700 bg-slate-950/70 p-3 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/40",
+            value: src,
+            onChange: (e) => setSrc(e.target.value),
+            placeholder: "Paste text to rewrite..."
           }
         ),
-        /* @__PURE__ */ jsxs4(
-          "select",
+        /* @__PURE__ */ jsxs5("div", { className: "flex flex-wrap items-center gap-3 text-xs text-slate-400", children: [
+          /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx9("span", { children: "Tone:" }),
+            /* @__PURE__ */ jsxs5(
+              "select",
+              {
+                title: "Select tone",
+                className: "rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100",
+                value: tone,
+                onChange: (e) => setTone(e.target.value),
+                children: [
+                  /* @__PURE__ */ jsx9("option", { value: "neutral", children: "Neutral" }),
+                  /* @__PURE__ */ jsx9("option", { value: "formal", children: "Formal" }),
+                  /* @__PURE__ */ jsx9("option", { value: "casual", children: "Casual" }),
+                  /* @__PURE__ */ jsx9("option", { value: "friendly", children: "Friendly" }),
+                  /* @__PURE__ */ jsx9("option", { value: "professional", children: "Professional" }),
+                  /* @__PURE__ */ jsx9("option", { value: "confident", children: "Confident" })
+                ]
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx9("span", { children: "Length:" }),
+            /* @__PURE__ */ jsxs5(
+              "select",
+              {
+                title: "Select tone",
+                className: "rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100",
+                value: length,
+                onChange: (e) => setLength(e.target.value),
+                children: [
+                  /* @__PURE__ */ jsx9("option", { value: "shorter", children: "Shorter" }),
+                  /* @__PURE__ */ jsx9("option", { value: "same", children: "Same" }),
+                  /* @__PURE__ */ jsx9("option", { value: "longer", children: "Longer" })
+                ]
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx9("span", { children: "Creativity:" }),
+            /* @__PURE__ */ jsxs5(
+              "select",
+              {
+                title: "Select tone",
+                className: "rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100",
+                value: creativity,
+                onChange: (e) => setCreativity(e.target.value),
+                children: [
+                  /* @__PURE__ */ jsx9("option", { value: "low", children: "Low" }),
+                  /* @__PURE__ */ jsx9("option", { value: "medium", children: "Medium" }),
+                  /* @__PURE__ */ jsx9("option", { value: "high", children: "High" })
+                ]
+              }
+            )
+          ] }),
+          /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-2", children: [
+            /* @__PURE__ */ jsx9("span", { children: "Language:" }),
+            /* @__PURE__ */ jsxs5(
+              "select",
+              {
+                title: "Select tone",
+                className: "rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100",
+                value: lang,
+                onChange: (e) => setLang(e.target.value),
+                children: [
+                  /* @__PURE__ */ jsx9("option", { value: "auto", children: "Auto" }),
+                  /* @__PURE__ */ jsx9("option", { value: "English", children: "English" }),
+                  /* @__PURE__ */ jsx9("option", { value: "Ukrainian", children: "Ukrainian" }),
+                  /* @__PURE__ */ jsx9("option", { value: "Polish", children: "Polish" }),
+                  /* @__PURE__ */ jsx9("option", { value: "German", children: "German" }),
+                  /* @__PURE__ */ jsx9("option", { value: "Spanish", children: "Spanish" }),
+                  /* @__PURE__ */ jsx9("option", { value: "French", children: "French" }),
+                  /* @__PURE__ */ jsx9("option", { value: "Italian", children: "Italian" }),
+                  /* @__PURE__ */ jsx9("option", { value: "Portuguese", children: "Portuguese" }),
+                  /* @__PURE__ */ jsx9("option", { value: "Russian", children: "Russian" }),
+                  /* @__PURE__ */ jsx9("option", { value: "Turkish", children: "Turkish" })
+                ]
+              }
+            )
+          ] })
+        ] }),
+        /* @__PURE__ */ jsx9("div", { className: "pt-1", children: /* @__PURE__ */ jsx9(
+          Button,
           {
-            title: "selectRewriter",
-            className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
-            value: length,
-            onChange: (e) => setLength(e.target.value),
-            children: [
-              /* @__PURE__ */ jsx6("option", { value: "shorter", children: "Shorter" }),
-              /* @__PURE__ */ jsx6("option", { value: "same", children: "Same length" }),
-              /* @__PURE__ */ jsx6("option", { value: "longer", children: "Longer" })
-            ]
+            type: "button",
+            disabled: loading,
+            onClick: () => void handleRewrite(),
+            className: "px-5",
+            children: loading ? "Rewriting..." : "Rewrite"
           }
-        ),
-        /* @__PURE__ */ jsxs4(
-          "select",
-          {
-            title: "selectRewriter",
-            className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
-            value: creativity,
-            onChange: (e) => setCreativity(e.target.value),
-            children: [
-              /* @__PURE__ */ jsx6("option", { value: "low", children: "Creativity: Low" }),
-              /* @__PURE__ */ jsx6("option", { value: "medium", children: "Creativity: Medium" }),
-              /* @__PURE__ */ jsx6("option", { value: "high", children: "Creativity: High" })
-            ]
-          }
-        ),
-        /* @__PURE__ */ jsx6(
-          "select",
-          {
-            title: "selectRewriter",
-            className: "rounded-xl border px-3 py-2 text-sm bg-white text-slate-900 border-slate-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700",
-            value: lang,
-            onChange: (e) => setLang(e.target.value),
-            children: langs.map((l) => /* @__PURE__ */ jsx6("option", { value: l, children: l }, l))
-          }
-        )
+        ) })
+      ] }),
+      /* @__PURE__ */ jsxs5("div", { className: "flex flex-col gap-3", children: [
+        /* @__PURE__ */ jsx9("div", { className: "flex items-center justify-between text-xs text-slate-400", children: /* @__PURE__ */ jsx9("span", { children: "Result" }) }),
+        /* @__PURE__ */ jsx9("div", { className: "h-44 md:h-56 rounded-xl border border-slate-700 bg-slate-950/50 p-3 text-sm text-slate-100 overflow-auto", children: out ? /* @__PURE__ */ jsx9("div", { className: "whitespace-pre-wrap break-words", children: out }) : /* @__PURE__ */ jsx9("span", { className: "text-slate-500", children: "Rewritten text will appear here\u2026" }) }),
+        /* @__PURE__ */ jsxs5("div", { className: "mt-1 text-[11px] text-slate-500 flex flex-wrap gap-3", children: [
+          /* @__PURE__ */ jsxs5("span", { children: [
+            "Tone: ",
+            /* @__PURE__ */ jsx9("span", { className: "text-slate-300 capitalize", children: tone })
+          ] }),
+          /* @__PURE__ */ jsxs5("span", { children: [
+            "Length:",
+            " ",
+            /* @__PURE__ */ jsx9("span", { className: "text-slate-300 capitalize", children: length })
+          ] }),
+          /* @__PURE__ */ jsxs5("span", { children: [
+            "Creativity:",
+            " ",
+            /* @__PURE__ */ jsx9("span", { className: "text-slate-300 capitalize", children: creativity })
+          ] }),
+          /* @__PURE__ */ jsxs5("span", { children: [
+            "Language:",
+            " ",
+            /* @__PURE__ */ jsx9("span", { className: "text-slate-300", children: lang === "auto" ? "Auto" : lang })
+          ] })
+        ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsx6(
-      "textarea",
-      {
-        className: "h-44 w-full resize-none rounded-xl border p-3 text-sm\r\n                   border-slate-300 bg-white text-slate-900 placeholder:text-slate-400\r\n                   dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500",
-        placeholder: "Paste text to rewrite\u2026",
-        value: src,
-        onChange: (e) => setSrc(e.target.value)
-      }
-    ),
-    /* @__PURE__ */ jsx6("div", { className: "flex items-center gap-2", children: /* @__PURE__ */ jsx6(Button, { disabled: !canRun || loading, onClick: run, children: loading ? "\u2026" : "Rewrite" }) }),
-    /* @__PURE__ */ jsx6(
-      "div",
-      {
-        className: "min-h-16 w-full whitespace-pre-wrap rounded-xl border p-3 text-sm\r\n                      border-slate-200 bg-white/70 text-slate-900\r\n                      dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100",
-        children: out || "Output will appear here"
-      }
-    ),
-    /* @__PURE__ */ jsxs4("div", { className: "flex items-center gap-3", children: [
-      provider && /* @__PURE__ */ jsxs4("span", { className: "rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300", children: [
+    /* @__PURE__ */ jsxs5("div", { className: "flex items-center gap-3", children: [
+      provider && /* @__PURE__ */ jsxs5("span", { className: "rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300", children: [
         "via ",
         provider
       ] }),
-      error && /* @__PURE__ */ jsx6("p", { className: "text-xs text-slate-400", children: error })
+      error && /* @__PURE__ */ jsx9("p", { className: "text-xs text-slate-400", children: error })
     ] })
   ] });
 };
+var Rewriter = withLicenseGuard(RewriterInner, {
+  title: "Rewriter (Pro)",
+  message: "Rewriter is available only with a valid @mrszlv/ai-ui-components license."
+});
 
 // src/lib/ai/AIProvider.tsx
-import { useMemo as useMemo3, useState as useState6 } from "react";
-import { jsx as jsx7 } from "react/jsx-runtime";
+import { useMemo as useMemo4, useState as useState6 } from "react";
+import { jsx as jsx10 } from "react/jsx-runtime";
 var DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
 var DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant";
 function fromVite(name) {
@@ -815,7 +1204,7 @@ var AIProvider = ({
   const resolvedGroqKey = groqKey ?? readEnv("VITE_GROQ_KEY");
   const resolvedOpenAIModel = openaiModel ?? readEnv("VITE_OPENAI_MODEL") ?? DEFAULT_OPENAI_MODEL;
   const resolvedGroqModel = groqModel ?? readEnv("VITE_GROQ_MODEL") ?? DEFAULT_GROQ_MODEL;
-  const value = useMemo3(() => {
+  const value = useMemo4(() => {
     const openai = resolvedOpenAIKey ? new OpenAIClient(resolvedOpenAIKey) : null;
     const groq = resolvedGroqKey ? new GroqClient(resolvedGroqKey) : null;
     const active = provider === "groq" ? groq ?? openai : openai ?? groq;
@@ -840,7 +1229,7 @@ var AIProvider = ({
     resolvedOpenAIModel,
     resolvedGroqModel
   ]);
-  return /* @__PURE__ */ jsx7(AIContext.Provider, { value, children });
+  return /* @__PURE__ */ jsx10(AIContext.Provider, { value, children });
 };
 var AIProvider_default = AIProvider;
 
@@ -851,6 +1240,7 @@ var AIUI = {
   Translator,
   Rewriter,
   AIProvider: AIProvider_default,
+  LicenseProvider,
   useAI
 };
 var index_default = AIUI;
@@ -862,6 +1252,8 @@ export {
   Card,
   ChatBox,
   GroqClient,
+  LicenseContext,
+  LicenseProvider,
   OpenAIClient,
   Rewriter,
   Summarizer,
@@ -869,6 +1261,7 @@ export {
   index_default as default,
   readOpenAISSE,
   useAI,
-  useAIContext
+  useAIContext,
+  useLicense
 };
 //# sourceMappingURL=index.js.map
