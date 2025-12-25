@@ -16,7 +16,7 @@ type PaywallCardProps = {
   debugReason?: string | null;
 };
 
-const DEFAULT_CTA = "https://t.me/@miroszlavpopovics";
+const DEFAULT_CTA = "https://t.me/miroszlavpopovics";
 const DEFAULT_PKG = "@mrszlv/ai-ui-components";
 
 export const PaywallCard: React.FC<PaywallCardProps> = ({

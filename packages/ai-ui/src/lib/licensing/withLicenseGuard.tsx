@@ -8,7 +8,7 @@ type GuardOptions = {
   reason?: string;
 };
 
-const LICENSE_URL = "https://t.me/@miroszlavpopovics"; // постав свій контакт/лендінг
+const LICENSE_URL = "https://t.me/miroszlavpopovics";
 
 export function withLicenseGuard<P extends object>(
   Wrapped: React.ComponentType<P>,

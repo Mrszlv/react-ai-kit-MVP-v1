@@ -55,3 +55,7 @@ vite/
 # npm pack artifacts
 *.tgz
 *.tgz
+
+CONTRIBUTING.md
+licenses.csv
+.pack/

@@ -446,7 +446,7 @@ import "react";
 // src/components/PaywallCard/PaywallCard.tsx
 import "react";
 import { jsx as jsx4, jsxs } from "react/jsx-runtime";
-var DEFAULT_CTA = "https://t.me/@miroszlavpopovics";
+var DEFAULT_CTA = "https://t.me/miroszlavpopovics";
 var DEFAULT_PKG = "@mrszlv/ai-ui-components";
 var PaywallCard = ({
   title = "Pro component",
@@ -521,7 +521,7 @@ var PaywallCard = ({
 
 // src/lib/licensing/withLicenseGuard.tsx
 import { jsx as jsx5 } from "react/jsx-runtime";
-var LICENSE_URL = "https://t.me/@miroszlavpopovics";
+var LICENSE_URL = "https://t.me/miroszlavpopovics";
 function withLicenseGuard(Wrapped, options) {
   const ComponentWithGuard = (props) => {
     const { status, valid, error } = useLicense();
@@ -770,8 +770,7 @@ var SummarizerInner = () => {
             className: "px-5",
             children: loading ? "Summarizing..." : "Summarize"
           }
-        ) }),
-        error && /* @__PURE__ */ jsx7("p", { className: "text-xs text-red-400", children: String(error) })
+        ) })
       ] }),
       /* @__PURE__ */ jsxs3("div", { className: "flex flex-col gap-3", children: [
         /* @__PURE__ */ jsx7("div", { className: "flex items-center justify-between text-xs text-slate-400", children: /* @__PURE__ */ jsx7("span", { children: "Summary" }) }),

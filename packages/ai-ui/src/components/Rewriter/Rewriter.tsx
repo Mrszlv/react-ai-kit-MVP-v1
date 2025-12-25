@@ -119,12 +119,6 @@ const RewriterInner: React.FC = () => {
             </p>
           </div>
         </div>
-
-        {/* {provider && (
-          <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs uppercase tracking-wide text-slate-400">
-            {provider}
-          </span>
-        )} */}
       </div>
 
       {/* main grid */}
@@ -225,8 +219,6 @@ const RewriterInner: React.FC = () => {
               {loading ? "Rewriting..." : "Rewrite"}
             </Button>
           </div>
-
-          {/* {error && <p className="text-xs text-red-400">{String(error)}</p>} */}
         </div>
 
         {/* right: result */}

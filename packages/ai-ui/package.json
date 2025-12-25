@@ -1,6 +1,6 @@
 {
   "name": "@mrszlv/ai-ui-components",
-  "version": "0.1.9",
+  "version": "0.2.3",
   "description": "AI-UI React components with OpenAI/Groq provider + auto-fallback",
   "type": "module",
   "private": false,
