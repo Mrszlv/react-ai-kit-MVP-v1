@@ -20,9 +20,7 @@ export function withLicenseGuard<P extends object>(
     if (status === "checking") return null;
 
     if (!valid) {
-      const isDev =
-        typeof import.meta !== "undefined" &&
-        import.meta.env?.MODE === "development";
+      const isDev = typeof __DEV__ !== "undefined" ? __DEV__ : false;
 
       return (
         <PaywallCard

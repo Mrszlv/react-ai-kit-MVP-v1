@@ -1,20 +1,19 @@
 {
   "name": "@mrszlv/ai-ui-components",
-  "version": "0.2.3",
+  "version": "0.1.9",
   "description": "AI-UI React components with OpenAI/Groq provider + auto-fallback",
   "type": "module",
-  "private": false,
-  "license": "MIT",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "style": "dist/index.css",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "style": "./dist/index.css",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
     },
-    "./dist/index.css": "./dist/index.css",
     "./index.css": "./dist/index.css",
     "./style.css": "./dist/index.css"
   },
@@ -26,6 +25,16 @@
   "sideEffects": [
     "**/*.css"
   ],
+  "license": "MIT",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrszlv/react-ai-kit-MVP-v1.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mrszlv/react-ai-kit-MVP-v1/issues"
+  },
+  "homepage": "https://github.com/mrszlv/react-ai-kit-MVP-v1#readme",
   "peerDependencies": {
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19"
@@ -39,7 +48,8 @@
   "scripts": {
     "build": "tsup",
     "build:css": "npx tailwindcss -i src/tailwind.css -o dist/index.css --minify",
-    "build:all": "npm run build && npm run build:css"
+    "build:all": "npm run build && npm run build:css",
+    "prepack": "npm run build:all"
   },
   "devDependencies": {
     "rimraf": "^6.1.0",

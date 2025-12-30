@@ -21,7 +21,11 @@ const DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant";
 
 function fromVite(name: string): string | undefined {
   // без any та без порожніх блоків
-  const env = (import.meta as unknown as { env?: EnvLike }).env;
+  const env =
+    typeof process !== "undefined" && process.env
+      ? (process.env as unknown as EnvLike)
+      : ({} as EnvLike);
+
   return env ? env[name] : undefined;
 }
 
@@ -30,11 +34,13 @@ function fromNode(name: string): string | undefined {
     typeof process !== "undefined"
       ? (process as unknown as { env?: EnvLike }).env
       : undefined;
+
   return env ? env[name] : undefined;
 }
 
 function fromGlobal(name: string): string | undefined {
   const env = (globalThis as unknown as { __AIUI_ENV?: EnvLike }).__AIUI_ENV;
+
   return env ? env[name] : undefined;
 }
 

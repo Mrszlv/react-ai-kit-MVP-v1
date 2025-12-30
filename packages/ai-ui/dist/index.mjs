@@ -527,7 +527,7 @@ function withLicenseGuard(Wrapped, options) {
     const { status, valid, error } = useLicense();
     if (status === "checking") return null;
     if (!valid) {
-      const isDev = typeof import.meta !== "undefined" && import.meta.env?.MODE === "development";
+      const isDev = true ? true : false;
       return /* @__PURE__ */ jsx5(
         PaywallCard,
         {
@@ -1174,7 +1174,7 @@ import { jsx as jsx10 } from "react/jsx-runtime";
 var DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
 var DEFAULT_GROQ_MODEL = "llama-3.1-8b-instant";
 function fromVite(name) {
-  const env = import.meta.env;
+  const env = typeof process !== "undefined" && process.env ? process.env : {};
   return env ? env[name] : void 0;
 }
 function fromNode(name) {
@@ -1263,4 +1263,4 @@ export {
   useAIContext,
   useLicense
 };
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=index.mjs.map
